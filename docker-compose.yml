@@ -1,0 +1,21 @@
+services:
+  sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fabbricca/adaptive-gps-spoofing:latest
+    container_name: drone-spoofing
+    tty: true
+    stdin_open: true
+    working_dir: /work
+    environment:
+      ARDUPILOT_ROOT: /opt/ardupilot
+      MPLBACKEND: Agg
+    volumes:
+      - ./scripts:/work/scripts
+      - ./analysis:/work/analysis
+      - ./missions:/work/missions
+      - ./logs:/work/logs
+      - ./report/img:/work/plots
+    ports:
+      - "14550:14550/udp"
