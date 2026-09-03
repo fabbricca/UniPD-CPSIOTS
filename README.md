@@ -17,6 +17,11 @@ The full plan lives in [../PROJECT_PLAN.md](../PROJECT_PLAN.md).
 ./run.sh test                  # host-side unit tests for threshold + metrics
 ```
 
+The container starts as root and its entrypoint remaps the `user` account to
+`LOCAL_UID`/`LOCAL_GID` (defaults: your host `id -u`/`id -g` via
+`docker-compose.yml`) before dropping privileges, so files written into the
+bind-mounted `logs/` and `results/` directories are owned by you.
+
 ## Layout
 
 ```

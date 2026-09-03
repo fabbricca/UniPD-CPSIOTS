@@ -12,6 +12,11 @@ services:
     working_dir: /home/user/rpl-ids
     environment:
       MPLBACKEND: Agg
+      # remap-user.sh gives the container user these ids so bind-mounted
+      # files are owned by the host user. Export them in your shell or rely
+      # on the defaults below.
+      LOCAL_UID: ${LOCAL_UID:-1000}
+      LOCAL_GID: ${LOCAL_GID:-984}
       # X11 forwarding for the Cooja GUI (used for screenshots only).
       DISPLAY: ${DISPLAY:-:0}
     volumes:
