@@ -8,29 +8,28 @@
 # We instead clone a pinned tag into the image so every build is reproducible
 # and record the exact commit in /opt/VERSION.txt.
 
-ARG CONTIKI_NG_TAG=release/v4.9
+ARG CONTIKI_NG_TAG=release/v5.2
 
 FROM contiker/contiki-ng:latest
 
 ARG CONTIKI_NG_TAG
-ENV CNG_PATH=/home/user/contiki-ng \
-    CONTIKI_NG_TAG=${CONTIKI_NG_TAG} \
+ENV CONTIKI_NG_TAG=${CONTIKI_NG_TAG} \
     DEBIAN_FRONTEND=noninteractive
 
 USER root
 WORKDIR /home/user
 
 # Pinned Contiki-NG checkout with Cooja submodule.
-RUN rm -rf "${CNG_PATH}" \
+RUN rm -rf "${CONTIKI_NG}" \
     && git clone --branch "${CONTIKI_NG_TAG}" --depth 1 \
-        https://github.com/contiki-ng/contiki-ng.git "${CNG_PATH}" \
-    && cd "${CNG_PATH}" \
+        https://github.com/contiki-ng/contiki-ng.git "${CONTIKI_NG}" \
+    && cd "${CONTIKI_NG}" \
     && git submodule update --init --depth 1 tools/cooja \
-    && chown -R user:user "${CNG_PATH}"
+    && chown -R user:user "${CONTIKI_NG}"
 
 # Apply our instrumentation patches to the pinned tree (Phase 2).
 COPY patches/ /opt/patches/
-RUN cd "${CNG_PATH}" \
+RUN cd "${CONTIKI_NG}" \
     && for p in /opt/patches/*.patch; do \
          [ -e "$p" ] || continue; \
          echo "Applying $p"; git apply --whitespace=nowarn "$p" || exit 1; \
@@ -38,14 +37,14 @@ RUN cd "${CNG_PATH}" \
 
 # Pre-build Cooja so headless runs do not pay the Gradle cost every time.
 USER user
-RUN cd "${CNG_PATH}/tools/cooja" && ./gradlew --no-daemon -q jar
+RUN cd "${CONTIKI_NG}/tools/cooja" && ./gradlew --no-daemon -q jar
 
 # Version record for the report (Phase 0 checkpoint).
 USER root
 RUN { echo "date=$(date -u +%FT%TZ)"; \
       echo "contiki_ng_tag=${CONTIKI_NG_TAG}"; \
-      echo "contiki_ng_commit=$(git -C ${CNG_PATH} rev-parse HEAD)"; \
-      echo "cooja_commit=$(git -C ${CNG_PATH}/tools/cooja rev-parse HEAD)"; \
+      echo "contiki_ng_commit=$(git -C ${CONTIKI_NG} rev-parse HEAD)"; \
+      echo "cooja_commit=$(git -C ${CONTIKI_NG}/tools/cooja rev-parse HEAD)"; \
       echo "java=$(java -version 2>&1 | head -1)"; \
       echo "msp430_gcc=$(msp430-gcc --version 2>&1 | head -1)"; \
       echo "arm_gcc=$(arm-none-eabi-gcc --version 2>&1 | head -1)"; \

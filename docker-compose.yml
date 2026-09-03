@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        CONTIKI_NG_TAG: release/v4.9
+        CONTIKI_NG_TAG: release/v5.2
     image: rpl-ids:latest
     container_name: rpl-ids
     tty: true

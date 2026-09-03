@@ -13,7 +13,7 @@ case "$cmd" in
     make)    exec docker compose run --rm sim make "$@" ;;
     cooja)   # GUI Cooja. Needs `xhost +local:docker` on the host first.
              exec docker compose run --rm sim \
-                 bash -c 'cd $CNG_PATH/tools/cooja && ./gradlew --no-daemon run' ;;
+                 bash -c 'cd $CONTIKI_NG/tools/cooja && ./gradlew --no-daemon run' ;;
     sim)     # Headless run: ./run.sh sim simulations/xxx.csc
              exec docker compose run --rm sim scripts/run_scenario.sh "$@" ;;
     test)    exec docker compose run --rm sim python -m pytest tests "$@" ;;

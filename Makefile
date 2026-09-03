@@ -7,7 +7,7 @@
 #
 # Four firmware images are produced, one per Cooja mote type.
 
-CONTIKI = $(CNG_PATH)
+CONTIKI = $(CONTIKI_NG)
 
 CONTIKI_PROJECT = rpl-ids-root rpl-ids-node neighbor-attacker dis-attacker
 all: $(CONTIKI_PROJECT)
