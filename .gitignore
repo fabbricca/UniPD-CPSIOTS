@@ -1,0 +1,28 @@
+# build output
+build/
+*.cooja
+*.sky
+*.z1
+*.native
+*.map
+*.elf
+*.hex
+*.ihex
+*.bin
+*.o
+*.d
+obj_*/
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+# results are regenerated; keep directory only
+logs/*
+!logs/.gitkeep
+results/*
+!results/.gitkeep
+report/figures/*
+!report/figures/.gitkeep
+# cooja
+COOJA.log
+COOJA.testlog

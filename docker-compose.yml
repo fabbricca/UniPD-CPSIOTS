@@ -1,0 +1,20 @@
+services:
+  sim:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CONTIKI_NG_TAG: release/v4.9
+    image: rpl-ids:latest
+    container_name: rpl-ids
+    tty: true
+    stdin_open: true
+    working_dir: /home/user/rpl-ids
+    environment:
+      MPLBACKEND: Agg
+      # X11 forwarding for the Cooja GUI (used for screenshots only).
+      DISPLAY: ${DISPLAY:-:0}
+    volumes:
+      - .:/home/user/rpl-ids
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    network_mode: host
