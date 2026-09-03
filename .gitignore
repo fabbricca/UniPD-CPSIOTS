@@ -23,6 +23,7 @@ results/*
 !results/.gitkeep
 report/figures/*
 !report/figures/.gitkeep
+!report/evidence/
 # cooja
 COOJA.log
 COOJA.testlog

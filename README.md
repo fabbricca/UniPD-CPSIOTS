@@ -36,6 +36,20 @@ tests/                                   pytest for threshold and metric maths
 logs/ results/ report/                   generated data (git-ignored) and report
 ```
 
+## Headless Cooja notes (learned in Phase 0)
+
+* Invocation: `java -jar cooja.jar --no-gui --contiki=$CONTIKI_NG --logdir=DIR [--random-seed=N] file.csc`.
+  `--no-gui` is a bare flag. The control script's `log.log()` output goes to
+  `DIR/COOJA.testlog`; `log.testOK()` gives exit code 0, `log.testFailed()` 1.
+* The control script body runs inside a function, but the `TIMEOUT(ms, action)`
+  action is evaluated in global scope. Declare shared state with bare
+  assignment (`senders = {}`), never `var`, or the action sees a ReferenceError.
+* `TIMEOUT` takes milliseconds; `time` inside the script is microseconds.
+* 10 `cooja` motes simulate 5 minutes in under a second of wall time, so the
+  development loop is fast; `sky` motes are much slower.
+* Phase 0 evidence: `report/evidence/phase0-smoke-rpl-udp-seed1.log` (stock
+  `rpl-udp`, 1 root + 9 clients, 30 m grid, all clients heard by the root within 46 s).
+
 ## Adaptations from the paper (running list)
 
 | Paper (Contiki 2.7) | This project (Contiki-NG) | Why |
