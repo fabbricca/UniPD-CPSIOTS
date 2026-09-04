@@ -20,6 +20,9 @@ case "$cmd" in
     gen)     exec docker compose run --rm sim python scripts/gen_scenario.py "$@" ;;
     parse)   exec docker compose run --rm sim python scripts/parse_logs.py "$@" ;;
     metrics) exec docker compose run --rm sim python scripts/calculate_metrics.py "$@" ;;
+    matrix)  exec docker compose run --rm sim python scripts/run_matrix.py "$@" ;;
+    aggregate) exec docker compose run --rm sim python scripts/aggregate.py "$@" ;;
+    plot)    exec docker compose run --rm sim python scripts/plot_results.py "$@" ;;
     help|*)
         cat <<USAGE
 Usage: ./run.sh <command> [args]
@@ -34,6 +37,9 @@ Usage: ./run.sh <command> [args]
   gen [...]      Generate a scenario (scripts/gen_scenario.py)
   parse <log>    Parse a run log into results/ CSVs (scripts/parse_logs.py)
   metrics <log>  Detection metrics vs ground truth (scripts/calculate_metrics.py)
+  matrix [...]   Run a scenario matrix (scripts/run_matrix.py)
+  aggregate      Summarise results/matrix.csv (scripts/aggregate.py)
+  plot <sub>     Figures: 'plot run <log>' or 'plot matrix' (scripts/plot_results.py)
 USAGE
         ;;
 esac

@@ -180,6 +180,38 @@ This matches the Samuelson bound from section 3 exactly and explains why the
 distributed IDS still reaches node-level TPR 1.0: one non-blind monitor is
 enough. Evidence: `report/evidence/section4-*`.
 
+## Analysis pipeline (section 5)
+
+Three scripts turn runs into tables and figures:
+
+* `scripts/run_matrix.py --preset {dev,paper}` generates, runs and scores a
+  matrix across seeds and detector modes, writing one `results/<name>.metrics.json`
+  per run and a combined `results/matrix.csv`. Existing metrics are reused so an
+  interrupted matrix resumes cheaply (`--force` re-runs).
+* `scripts/aggregate.py` groups `matrix.csv` by configuration and reports
+  mean/std/min/max of node TPR, node FPR and latency across seeds, in the
+  layout of the paper's Table III (`results/summary.csv`).
+* `scripts/plot_results.py run <log>` draws the per-run figures (DIO/DIS over
+  time, threshold vs attacker count at the detecting monitor, alert timeline);
+  `plot_results.py matrix` draws TPR/FPR by network size, latency by attack
+  rate, and, when both modes are present, the paper-vs-sliding comparison.
+
+Wrappers: `./run.sh matrix --preset dev`, `./run.sh aggregate`,
+`./run.sh plot matrix`.
+
+### Dev matrix (10 nodes, 60 s window, 3 seeds)
+
+| attack | node TPR | node FPR (mean +- std) | latency |
+|---|---|---|---|
+| DIS, 1 attacker | 100 % | 0.00 % +- 0.00 | one window |
+| neighbour, 1 attacker | 100 % | 33.3 % +- 9.1 | one window |
+| baseline | n/a | 50 % (quantisation) | n/a |
+
+Node-level FPR is high at this development scale (10 nodes, 60 s windows, ~9
+normal nodes so one flag is >10%); the decision-level FPR is ~1% and the paper
+preset (20/30/40 nodes, 300 s windows, 5 seeds) is where these average down.
+The pipeline itself is validated here; the final numbers come from section 6.
+
 ## Adaptations from the paper (running list)
 
 | Paper (Contiki 2.7) | This project (Contiki-NG) | Why |
