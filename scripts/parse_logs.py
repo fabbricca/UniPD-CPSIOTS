@@ -28,7 +28,7 @@ SCHEMAS = {
     "RX":    ["from", "seq"],
     "RSTAT": ["rx_total", "rpl_nbrs", "routes"],
     "ATK":   ["action", "type", "a", "b"],
-    "IDS":   ["init", "window", "dis_thr", "block_thr", "temp_block", "warmup", "mode"],
+    "IDS":   ["init", "window", "dis_thr", "block_thr", "temp_block", "warmup", "mode", "eval"],
 }
 
 

@@ -2,11 +2,17 @@
  * ids.c - distributed anomaly IDS for RPL neighbour and DIS attacks.
  * See include/ids.h for the algorithm summary and the log record formats.
  *
- * The neighbour table here is deliberately independent of RPL's: the paper's
- * monitor counts DIOs from every node it can hear, including nodes RPL never
- * selects as parents. Entries are keyed by the 16-bit node id derived from
- * the sender's IPv6 address, which under Cooja's default addressing equals
- * the mote id, so ground-truth joins on the host are trivial.
+ * Two detector modes share the same profile and alert code (detect_over()):
+ *   PAPER    (default) one fixed IDS_WINDOW_SEC window; counters reset at its
+ *            end. Reproduces Farzaneh et al.
+ *   SLIDING  a ring of IDS_SLIDE_BUCKETS buckets of IDS_SLIDE_BUCKET_SEC each
+ *            (default 6 x 10 s = 60 s), advanced every bucket; detection runs
+ *            on the rolling sum every bucket, so latency is one bucket, not one
+ *            window. Original contribution.
+ *
+ * The neighbour table is independent of RPL's: the paper's monitor counts
+ * DIOs from every node it hears. Entries are keyed by the 16-bit node id from
+ * the sender's IPv6 address, which under Cooja equals the mote id.
  */
 #include "ids.h"
 #include "ids-k-table.h"
@@ -21,16 +27,22 @@
 #endif
 #if IDS_MODE_SLIDING
 #define IDS_MODE_NAME "sliding"
+#define IDS_EVAL_PERIOD_SEC IDS_SLIDE_BUCKET_SEC
 #else
 #define IDS_MODE_NAME "paper"
+#define IDS_EVAL_PERIOD_SEC IDS_WINDOW_SEC
 #endif
 
 static ids_nbr_t table[IDS_MAX_NEIGHBORS];
 static uint8_t table_count;
-static uint16_t window;
+static uint16_t window;              /* evaluations completed so far */
 static uint16_t parent_changes;
-static struct ctimer window_timer;
+static struct ctimer eval_timer;
 static uint8_t initialised;
+#if IDS_MODE_SLIDING
+static uint8_t head;                 /* current bucket index */
+static uint8_t filled;               /* buckets accumulated so far (<= N) */
+#endif
 
 /*---------------------------------------------------------------------------*/
 uint16_t
@@ -81,6 +93,37 @@ lookup(uint16_t id, int create)
   return NULL;
 }
 /*---------------------------------------------------------------------------*/
+/* Window counts for neighbour i, per mode. */
+static uint16_t
+win_dio(ids_nbr_t *n)
+{
+#if IDS_MODE_SLIDING
+  uint16_t s = 0;
+  uint8_t b;
+  for(b = 0; b < IDS_SLIDE_BUCKETS; b++) {
+    s += n->dio_buckets[b];
+  }
+  return s;
+#else
+  return n->dio;
+#endif
+}
+/*---------------------------------------------------------------------------*/
+static uint16_t
+win_dis(ids_nbr_t *n)
+{
+#if IDS_MODE_SLIDING
+  uint16_t s = 0;
+  uint8_t b;
+  for(b = 0; b < IDS_SLIDE_BUCKETS; b++) {
+    s += n->dis_buckets[b];
+  }
+  return s;
+#else
+  return n->dis;
+#endif
+}
+/*---------------------------------------------------------------------------*/
 static uint8_t
 block_state(ids_nbr_t *n)
 {
@@ -91,7 +134,6 @@ block_state(ids_nbr_t *n)
     if(clock_seconds() < n->block_until) {
       return 1;
     }
-    /* Temporary block elapsed: neighbour is reconsidered (paper phase IV). */
     n->block_until = 0;
     printf("BLOCK\t%u\texpire\t%u\t%u\n", n->id, n->block_count, IDS_TEMP_BLOCK_SEC);
   }
@@ -129,12 +171,20 @@ ids_rpl_input(uint8_t code, const uip_ipaddr_t *from)
     return 1;                       /* table full: count nothing, accept */
   }
   if(code == RPL_CODE_DIO) {
+#if IDS_MODE_SLIDING
+    if(n->dio_buckets[head] < 255) { n->dio_buckets[head]++; }
+#else
     n->dio++;
+#endif
 #if IDS_LOG_EVENTS
     printf("EV\tDIO\t%u\n", id);
 #endif
   } else if(code == RPL_CODE_DIS) {
+#if IDS_MODE_SLIDING
+    if(n->dis_buckets[head] < 255) { n->dis_buckets[head]++; }
+#else
     n->dis++;
+#endif
 #if IDS_LOG_EVENTS
     printf("EV\tDIS\t%u\n", id);
 #endif
@@ -156,21 +206,21 @@ ids_parent_switch(rpl_nbr_t *old, rpl_nbr_t *new)
          parent_changes);
 }
 /*---------------------------------------------------------------------------*/
-/* Paper algorithms 1 and 2 over the counts of the window that just ended.
- * Scaled by 1000; scripts/ids_model.py is the bit-exact reference. */
+/* Paper Algorithms 1 and 2 over per-neighbour window counts. Scaled by 1000;
+ * scripts/ids_model.py is the bit-exact reference. dio[]/dis[] are indexed in
+ * lock-step with table[0..n-1]. */
 static void
-detect(void)
+detect_over(const uint16_t *dio, const uint16_t *dis, uint8_t n)
 {
   uint8_t i;
-  uint8_t n = table_count;
   uint32_t sum = 0, sumsq = 0;
   uint32_t mean_x1000 = 0, sigma_x1000 = 0;
   uint16_t k_x1000 = ids_k_x1000[n < IDS_K_TABLE_MAX ? n : IDS_K_TABLE_MAX];
   uint32_t thr_x1000 = 0;
 
   for(i = 0; i < n; i++) {
-    sum += table[i].dio;
-    sumsq += (uint32_t)table[i].dio * table[i].dio;
+    sum += dio[i];
+    sumsq += (uint32_t)dio[i] * dio[i];
   }
   if(n > 0) {
     uint64_t num = (uint64_t)n * sumsq - (uint64_t)sum * sum;  /* n^2 * variance */
@@ -183,16 +233,16 @@ detect(void)
          (unsigned long)thr_x1000);
 
   if(window < IDS_WARMUP_WINDOWS) {
-    return;                         /* experimental parameter, 0 = paper */
+    return;
   }
   for(i = 0; i < n; i++) {
-    if((uint32_t)table[i].dio * 1000UL > thr_x1000) {
-      printf("ALERT\t%u\t%u\tDIO\t%u\t%lu\n", window, table[i].id, table[i].dio,
+    if((uint32_t)dio[i] * 1000UL > thr_x1000) {
+      printf("ALERT\t%u\t%u\tDIO\t%u\t%lu\n", window, table[i].id, dio[i],
              (unsigned long)thr_x1000);
       block(&table[i]);
     }
-    if(table[i].dis > IDS_DIS_THRESHOLD) {
-      printf("ALERT\t%u\t%u\tDIS\t%u\t%lu\n", window, table[i].id, table[i].dis,
+    if(dis[i] > IDS_DIS_THRESHOLD) {
+      printf("ALERT\t%u\t%u\tDIS\t%u\t%lu\n", window, table[i].id, dis[i],
              (unsigned long)IDS_DIS_THRESHOLD * 1000UL);
       block(&table[i]);
     }
@@ -200,31 +250,48 @@ detect(void)
 }
 /*---------------------------------------------------------------------------*/
 static void
-window_end(void *ptr)
+evaluate(void *ptr)
 {
   uint8_t i;
+  uint16_t wd[IDS_MAX_NEIGHBORS];
+  uint16_t ws[IDS_MAX_NEIGHBORS];
   uint16_t dio_sum = 0, dis_sum = 0;
 
   for(i = 0; i < table_count; i++) {
-    printf("NBR\t%u\t%u\t%u\t%u\t%u\t%u\n", window, table[i].id, table[i].dio,
-           table[i].dis, table[i].dropped, block_state(&table[i]));
-    dio_sum += table[i].dio;
-    dis_sum += table[i].dis;
+    wd[i] = win_dio(&table[i]);
+    ws[i] = win_dis(&table[i]);
+    printf("NBR\t%u\t%u\t%u\t%u\t%u\t%u\n", window, table[i].id, wd[i], ws[i],
+           table[i].dropped, block_state(&table[i]));
+    dio_sum += wd[i];
+    dis_sum += ws[i];
   }
   printf("WIN\t%u\t%u\t%d\t%u\t%u\n", window, table_count,
          rpl_neighbor_count(), dio_sum, dis_sum);
 
-  detect();
+  detect_over(wd, ws, table_count);
 
-  /* Paper: counters are reset at the end of every window. Neighbours stay
-   * known so a silent neighbour still contributes a zero to the mean. */
+#if IDS_MODE_SLIDING
+  /* Advance the ring: next bucket becomes current and is cleared. The dropped
+   * counter is per-evaluation and reset each tick. */
+  head = (head + 1) % IDS_SLIDE_BUCKETS;
+  for(i = 0; i < table_count; i++) {
+    table[i].dio_buckets[head] = 0;
+    table[i].dis_buckets[head] = 0;
+    table[i].dropped = 0;
+  }
+  if(filled < IDS_SLIDE_BUCKETS) {
+    filled++;
+  }
+#else
+  /* Paper: reset all counters at the end of the window. */
   for(i = 0; i < table_count; i++) {
     table[i].dio = 0;
     table[i].dis = 0;
     table[i].dropped = 0;
   }
+#endif
   window++;
-  ctimer_reset(&window_timer);
+  ctimer_reset(&eval_timer);
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -235,31 +302,22 @@ ids_init(void)
   window = 0;
   parent_changes = 0;
   initialised = 1;
-  ctimer_set(&window_timer, (clock_time_t)IDS_WINDOW_SEC * CLOCK_SECOND,
-             window_end, NULL);
-  printf("IDS\tinit\twindow=%u\tdis_thr=%u\tblock_thr=%u\ttemp_block=%u\twarmup=%u\tmode=%s\n",
+#if IDS_MODE_SLIDING
+  head = 0;
+  filled = 0;
+#endif
+  ctimer_set(&eval_timer, (clock_time_t)IDS_EVAL_PERIOD_SEC * CLOCK_SECOND,
+             evaluate, NULL);
+  printf("IDS\tinit\twindow=%u\tdis_thr=%u\tblock_thr=%u\ttemp_block=%u\twarmup=%u\tmode=%s\teval=%u\n",
          IDS_WINDOW_SEC, IDS_DIS_THRESHOLD, IDS_BLOCK_THRESHOLD, IDS_TEMP_BLOCK_SEC,
-         IDS_WARMUP_WINDOWS, IDS_MODE_NAME);
+         IDS_WARMUP_WINDOWS, IDS_MODE_NAME, IDS_EVAL_PERIOD_SEC);
 }
 /*---------------------------------------------------------------------------*/
-uint16_t
-ids_parent_changes(void)
+uint16_t ids_parent_changes(void) { return parent_changes; }
+uint16_t ids_window(void) { return window; }
+const ids_nbr_t *ids_neighbors(uint8_t *count)
 {
-  return parent_changes;
-}
-/*---------------------------------------------------------------------------*/
-uint16_t
-ids_window(void)
-{
-  return window;
-}
-/*---------------------------------------------------------------------------*/
-const ids_nbr_t *
-ids_neighbors(uint8_t *count)
-{
-  if(count) {
-    *count = table_count;
-  }
+  if(count) { *count = table_count; }
   return table;
 }
 /*---------------------------------------------------------------------------*/

@@ -107,7 +107,7 @@ def run_one(t, seed, mode, force):
         raise RuntimeError(f"{name}: no log produced\n{r.stdout[-500:]}\n{r.stderr[-500:]}")
     tables = pl.parse(log)
     truth = cm.load_truth(csc.with_suffix(".truth.csv"))
-    win = int(tables["IDS"].iloc[0]["window"]) if len(tables["IDS"]) else t["window"]
+    win = cm.eval_period(tables)
     m = cm.compute(tables, truth, win)
     mjson.parent.mkdir(parents=True, exist_ok=True)
     mjson.write_text(json.dumps(m, indent=2))

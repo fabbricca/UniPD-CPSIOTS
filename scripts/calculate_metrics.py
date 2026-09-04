@@ -36,6 +36,22 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import parse_logs as pl  # noqa: E402
 
 
+def eval_period(tables):
+    """Seconds represented by one window index: the detector's evaluation
+    period. In sliding mode that is the bucket size (IDS init 'eval' field);
+    in paper mode it equals the window."""
+    ids = tables["IDS"]
+    if len(ids) == 0:
+        return 300
+    row = ids.iloc[0]
+    if "eval" in ids.columns and str(row.get("eval")) not in ("nan", "None", ""):
+        try:
+            return int(float(row["eval"]))
+        except (ValueError, TypeError):
+            pass
+    return int(row["window"])
+
+
 def default_truth(log):
     stem = pathlib.Path(log).stem
     for c in (pathlib.Path(log).with_suffix(".truth.csv"),
@@ -67,10 +83,15 @@ def compute(tables, truth, window_sec):
     # ends: window w covers ((w)*win, (w+1)*win] in seconds of sim time. We
     # score a window as "attack active" if its end time is within the attack.
     def active(win):
+        # A window is scored if its time span overlaps the attack interval.
+        # Window `win` spans (win*win_sec, (win+1)*win_sec]. Detection often
+        # happens in the first overlapping window and then blocking suppresses
+        # the attacker, so this must include that window rather than shift past
+        # it. Baseline runs score the whole run.
         if no_attack:
-            return True          # baseline: score false positives over the whole run
-        wend = (win + 1) * window_sec
-        return start + window_sec <= wend <= atk_end + window_sec
+            return True
+        wstart, wend = win * window_sec, (win + 1) * window_sec
+        return wstart < atk_end and wend > start
 
     # Alerts indexed by (monitor, win, neighbour) -> set of kinds.
     ak = {}
@@ -148,7 +169,7 @@ def main():
     a = ap.parse_args()
     tables = pl.parse(a.log)
     truth = load_truth(a.truth or default_truth(a.log))
-    win = int(tables["IDS"].iloc[0]["window"]) if len(tables["IDS"]) else 300
+    win = eval_period(tables)
     m = compute(tables, truth, win)
     for k, v in m.items():
         print(f"{k:24} {v}")

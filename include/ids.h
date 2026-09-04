@@ -41,6 +41,10 @@ typedef struct {
   uint8_t block_count;  /* detections so far (paper: block_count) */
   uint8_t permanent;    /* permanently blocked */
   unsigned long block_until;  /* clock_seconds() at which a temp block ends, 0 = none */
+#if IDS_MODE_SLIDING
+  uint8_t dio_buckets[IDS_SLIDE_BUCKETS];  /* rolling per-bucket DIO counts */
+  uint8_t dis_buckets[IDS_SLIDE_BUCKETS];  /* rolling per-bucket DIS counts */
+#endif
 } ids_nbr_t;
 
 /* Start the observation-window timer. Call once from the node process. */
