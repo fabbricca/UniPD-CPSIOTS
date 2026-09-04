@@ -51,6 +51,15 @@ ifdef ATTACK_PERIOD_MS
   CFLAGS += -DATTACK_PERIOD_MS=$(ATTACK_PERIOD_MS)
 endif
 
+# Sky-fit build (ROM/RAM overhead measurement): shrink tables and silence the
+# per-message event log so the experimental node fits the Tmote Sky's 48 KB
+# ROM / 10 KB RAM. Enable with `make TARGET=sky SKY_FIT=1`.
+ifdef SKY_FIT
+  CFLAGS += -DNBR_TABLE_CONF_MAX_NEIGHBORS=12 -DNETSTACK_MAX_ROUTE_ENTRIES=8
+  CFLAGS += -DUIP_CONF_MAX_ROUTES=8 -DIDS_MAX_NEIGHBORS=12 -DIDS_LOG_EVENTS=0
+  CFLAGS += -DLOG_CONF_LEVEL_MAIN=LOG_LEVEL_NONE
+endif
+
 MAKE_ROUTING = MAKE_ROUTING_RPL_LITE
 MAKE_MAC = MAKE_MAC_CSMA
 MAKE_NET = MAKE_NET_IPV6

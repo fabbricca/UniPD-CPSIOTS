@@ -117,6 +117,7 @@ def build(args):
         f"APP_SEND_INTERVAL_SEC={args.send_interval}" if args.send_interval else "",
         f"IDS_DIS_THRESHOLD={args.dis_threshold}" if args.dis_threshold else "",
         f"IDS_WARMUP_WINDOWS={args.warmup}" if args.warmup else "",
+        "IDS_LOG_EVENTS=0" if args.no_events else "",
     ] if v)
     atk_vars = " ".join(v for v in [
         f"ATTACK_START_SEC={args.attack_start}" if args.attack_start else "",
@@ -185,6 +186,7 @@ def main():
     ap.add_argument("--send-interval", type=int, default=0, help="override APP_SEND_INTERVAL_SEC")
     ap.add_argument("--dis-threshold", type=int, default=0, help="override IDS_DIS_THRESHOLD (paper: 3)")
     ap.add_argument("--warmup", type=int, default=0, help="override IDS_WARMUP_WINDOWS (paper: 0)")
+    ap.add_argument("--no-events", action="store_true", help="disable per-message EV logging (smaller logs)")
     ap.add_argument("--attack", choices=["baseline", "neighbor", "dis"], default="baseline")
     ap.add_argument("--attackers", default="0", help="count (e.g. 1) or percentage (e.g. 20%%)")
     ap.add_argument("--attacker-ids", default="", help="comma list, overrides seed-based placement")

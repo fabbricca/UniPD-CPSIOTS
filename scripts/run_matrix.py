@@ -81,7 +81,8 @@ def gen_cmd(t, seed, mode, out):
          "--nodes", str(t["nodes"]), "--spacing", str(t["spacing"]),
          "--seed", str(seed), "--duration", str(t["duration"]),
          "--window", str(t["window"]), "--mode", mode,
-         "--attack", t["attack"], "--attackers", str(t["attackers"]), "--out", out]
+         "--attack", t["attack"], "--attackers", str(t["attackers"]),
+         "--no-events", "--out", out]
     if t.get("period_ms") is not None:
         c += ["--attack-period-ms", str(t["period_ms"])]
     if t.get("attack_start") is not None:

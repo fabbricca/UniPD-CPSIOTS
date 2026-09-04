@@ -8,10 +8,19 @@
 #define PROJECT_CONF_H_
 
 /* ---- Topology / tables -------------------------------------------------- */
-/* 40 nodes in 100 x 100 m with 50 m range: most nodes hear 15-25 others. */
+/* 40 nodes in 100 x 100 m with 50 m range: most nodes hear 15-25 others.
+ * These sizes suit the cooja/native target used for the experiments; the
+ * Tmote Sky build (ROM/RAM overhead measurement) overrides them smaller via
+ * the Makefile SKY_FIT knobs. */
+#ifndef NBR_TABLE_CONF_MAX_NEIGHBORS
 #define NBR_TABLE_CONF_MAX_NEIGHBORS   32
+#endif
+#ifndef NETSTACK_MAX_ROUTE_ENTRIES
 #define NETSTACK_MAX_ROUTE_ENTRIES     48
+#endif
+#ifndef UIP_CONF_MAX_ROUTES
 #define UIP_CONF_MAX_ROUTES            48
+#endif
 
 /* ---- Application traffic: constant-bit-rate UDP toward the root --------- */
 #define APP_UDP_CLIENT_PORT            8765
@@ -70,6 +79,8 @@
 #define LOG_CONF_LEVEL_IPV6            LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_6LOWPAN         LOG_LEVEL_WARN
 #define LOG_CONF_LEVEL_MAC             LOG_LEVEL_ERR   /* CSMA "not for us" is WARN and floods the log */
+#ifndef LOG_CONF_LEVEL_MAIN
 #define LOG_CONF_LEVEL_MAIN            LOG_LEVEL_INFO
+#endif
 
 #endif /* PROJECT_CONF_H_ */
