@@ -1,0 +1,18 @@
+IDS resource overhead (Tmote Sky, msp430-size, Contiki-NG v5.2)
+================================================================
+IDS module ids.o (paper mode):   text(ROM) 1988 B   bss(RAM) 588 B   data 0 B
+  - includes the k-table (82 B rodata) and the static neighbour table[].
+  - sliding mode adds 2*IDS_SLIDE_BUCKETS bytes/neighbour of RAM
+    (IDS_MAX_NEIGHBORS=40 -> +480 B RAM over paper mode).
+
+Stock RPL-lite + UDP client baseline (examples/rpl-udp, TARGET=sky):
+  text(ROM) 44578 / 49152 B (90.7%)   bss(RAM) 7036 / 10240 B (68.7%)
+
+Finding: under Contiki-NG v5.2 the stock RPL-lite + UDP node already uses 90%
+of the Sky's ROM, leaving ~4.5 KB. The IDS module (~2 KB ROM) fits within that
+headroom, but the additional CSV instrumentation used for the experiments does
+not; the full instrumented node overflows Sky ROM by ~10 KB. The experiments
+therefore run on the cooja/native mote (no memory limit). The paper used the
+same Tmote Sky but on Contiki 2.7, whose smaller RPL left far more free ROM.
+A deployed detector (module only, verbose logging removed) is Sky-viable; the
+instrumentation is a measurement artefact, not part of the IDS.
