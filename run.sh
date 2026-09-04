@@ -19,6 +19,7 @@ case "$cmd" in
     test)    exec docker compose run --rm sim python -m pytest tests "$@" ;;
     gen)     exec docker compose run --rm sim python scripts/gen_scenario.py "$@" ;;
     parse)   exec docker compose run --rm sim python scripts/parse_logs.py "$@" ;;
+    metrics) exec docker compose run --rm sim python scripts/calculate_metrics.py "$@" ;;
     help|*)
         cat <<USAGE
 Usage: ./run.sh <command> [args]
@@ -32,6 +33,7 @@ Usage: ./run.sh <command> [args]
   test           Run host-side Python tests
   gen [...]      Generate a scenario (scripts/gen_scenario.py)
   parse <log>    Parse a run log into results/ CSVs (scripts/parse_logs.py)
+  metrics <log>  Detection metrics vs ground truth (scripts/calculate_metrics.py)
 USAGE
         ;;
 esac

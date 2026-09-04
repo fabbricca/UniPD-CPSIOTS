@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import ids_model as m  # noqa: E402
 import parse_logs as p  # noqa: E402
 
-LOGS = sorted((ROOT / "report" / "evidence").glob("section3-*.log"))
+LOGS = sorted((ROOT / "report" / "evidence").glob("section[34]*.log"))
 
 
 @pytest.mark.parametrize("log", LOGS, ids=[l.name for l in LOGS])

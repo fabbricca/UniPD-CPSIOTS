@@ -18,7 +18,7 @@ ifeq ($(wildcard $(CONTIKI)/Makefile.include),)
   $(error Contiki-NG not found at '$(CONTIKI)'; run inside the rpl-ids container)
 endif
 
-CONTIKI_PROJECT = rpl-ids-root rpl-ids-node
+CONTIKI_PROJECT = rpl-ids-root rpl-ids-node neighbor-attacker dis-attacker
 all: $(CONTIKI_PROJECT)
 
 PROJECTDIRS += ../include
@@ -41,6 +41,15 @@ endif
 ifdef IDS_WARMUP_WINDOWS
   CFLAGS += -DIDS_WARMUP_WINDOWS=$(IDS_WARMUP_WINDOWS)
 endif
+ifdef ATTACK_START_SEC
+  CFLAGS += -DATTACK_START_SEC=$(ATTACK_START_SEC)
+endif
+ifdef ATTACK_DURATION_SEC
+  CFLAGS += -DATTACK_DURATION_SEC=$(ATTACK_DURATION_SEC)
+endif
+ifdef ATTACK_PERIOD_MS
+  CFLAGS += -DATTACK_PERIOD_MS=$(ATTACK_PERIOD_MS)
+endif
 
 MAKE_ROUTING = MAKE_ROUTING_RPL_LITE
 MAKE_MAC = MAKE_MAC_CSMA
@@ -53,10 +62,11 @@ include $(CONTIKI)/Makefile.include
 # firmware/build/ across scenarios. Objects that depend on the tunables above
 # are made to depend on a stamp file that is rewritten only when the variant
 # string changes, so switching window/mode/interval recompiles exactly them.
-VARIANT_ID := mode-$(IDS_MODE)_win-$(IDS_WINDOW_SEC)_send-$(APP_SEND_INTERVAL_SEC)_dis-$(IDS_DIS_THRESHOLD)_warm-$(IDS_WARMUP_WINDOWS)
+VARIANT_ID := mode-$(IDS_MODE)_win-$(IDS_WINDOW_SEC)_send-$(APP_SEND_INTERVAL_SEC)_dis-$(IDS_DIS_THRESHOLD)_warm-$(IDS_WARMUP_WINDOWS)_atk-$(ATTACK_START_SEC)-$(ATTACK_DURATION_SEC)-$(ATTACK_PERIOD_MS)
 VARIANT_STAMP := $(OBJECTDIR)/variant.stamp
 $(VARIANT_STAMP): FORCE
 	@mkdir -p $(dir $@)
 	@[ "$$(cat $@ 2>/dev/null)" = "$(VARIANT_ID)" ] || { echo "$(VARIANT_ID)" > $@; echo "  VARIANT   $(VARIANT_ID)"; }
 FORCE:
-$(OBJECTDIR)/ids.o $(OBJECTDIR)/rpl-ids-node.o $(OBJECTDIR)/rpl-ids-root.o: $(VARIANT_STAMP)
+$(OBJECTDIR)/ids.o $(OBJECTDIR)/rpl-ids-node.o $(OBJECTDIR)/rpl-ids-root.o \
+$(OBJECTDIR)/neighbor-attacker.o $(OBJECTDIR)/dis-attacker.o: $(VARIANT_STAMP)

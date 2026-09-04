@@ -129,6 +129,57 @@ sent 0-1: with Trickle at its maximum interval a 5-minute window holds only
 k for small neighbourhoods. The paper reports 0.2-9.6 % FPR for the same
 reason.
 
+## Attacks and detection (section 4)
+
+`firmware/neighbor-attacker.c` and `firmware/dis-attacker.c` are normal RPL
+nodes (they join, send CBR UDP) plus a timer that injects multicast DIO or DIS
+via rpl-lite's `rpl_icmp6_dio_output(NULL)` / `rpl_icmp6_dis_output(NULL)`
+between `ATTACK_START_SEC` and `+ ATTACK_DURATION_SEC`. `ATTACK_PERIOD_MS=0`
+gives the paper's random 5-60 s DIS cadence. Every injection is logged as an
+`ATK send` record, and `gen_scenario.py` writes a `.truth.csv` (attacker ids,
+type, rate, interval) that the analysis joins against; ground truth is never
+inferred from IDS output.
+
+`scripts/calculate_metrics.py` reports two aggregations:
+
+* **Node-level** (primary, comparable with the paper's Table III): each node
+  is classified once; an attacker is TP if any monitor raised the attack's own
+  rule in an active window. False positives are counted only for that rule, so
+  the columns line up with the paper's per-attack FPR.
+* **Decision-level** (secondary): one monitor's decision about one neighbour
+  at one window end, which exposes the blind spots.
+
+### Results (seed 1, dev scenarios)
+
+| Scenario | window | node TPR | node FPR | dec FPR | latency |
+|---|---|---|---|---|---|
+| 10-node DIS, 1 attacker | 60 s | 1.00 | 0.00 | 0.00 | 105 s |
+| 30-node DIS, 1 attacker | 300 s | 1.00 | 0.00 | 0.00 | 525 s |
+| 10-node neighbour, 1 attacker | 60 s | 1.00 | 0.33 | 1.6 % | 105 s |
+| 30-node neighbour, 1 attacker | 300 s | 1.00 | 0.24 | 1.0 % | 525 s |
+
+The DIS attack reproduces the paper's ideal case exactly: TPR 100%, FPR 0%,
+F1 1.0. The neighbour attack is always caught (node TPR 1.0); its decision-level
+FPR (~1%) sits inside the paper's 0.2-9.6% band, while the node-level FPR is
+inflated by the dense dev grid and small node count and will average down over
+the final matrix. Latency equals one window, which motivates the sliding-window
+detector.
+
+### Blind spot confirmed experimentally
+
+In the 10-node neighbour run the attacker (id 4) floods 13-14 DIOs per window
+(normal: ~1) yet is flagged by only one of the three monitors that hear it:
+
+| monitor | neighbours n | sqrt(n-1) | k(n) | prediction | flagged attacker |
+|---|---|---|---|---|---|
+| 7 | 5 | 2.00 | 2.03 | blind | 0 / 7 windows |
+| 3 | 6 | 2.24 | 2.28 | blind | 0 / 7 windows |
+| 6 | 8 | 2.65 | 2.57 | detect | 7 / 7 windows |
+
+This matches the Samuelson bound from section 3 exactly and explains why the
+distributed IDS still reaches node-level TPR 1.0: one non-blind monitor is
+enough. Evidence: `report/evidence/section4-*`.
+
 ## Adaptations from the paper (running list)
 
 | Paper (Contiki 2.7) | This project (Contiki-NG) | Why |
