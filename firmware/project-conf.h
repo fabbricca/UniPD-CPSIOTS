@@ -36,6 +36,11 @@
 #ifndef IDS_TEMP_BLOCK_SEC
 #define IDS_TEMP_BLOCK_SEC             60     /* paper: 1 minute */
 #endif
+/* Windows in which detection is suppressed (0 = paper behaviour). Kept as an
+ * explicit experimental parameter for the warm-up discussion. */
+#ifndef IDS_WARMUP_WINDOWS
+#define IDS_WARMUP_WINDOWS             0
+#endif
 /* Sliding-window variant (original contribution). */
 #ifndef IDS_SLIDE_BUCKET_SEC
 #define IDS_SLIDE_BUCKET_SEC           10

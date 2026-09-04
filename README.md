@@ -81,6 +81,54 @@ recompiles the three project objects whenever the variant string changes.
 * Phase 0 evidence: `report/evidence/phase0-smoke-rpl-udp-seed1.log` (stock
   `rpl-udp`, 1 root + 9 clients, 30 m grid, all clients heard by the root within 46 s).
 
+## Detector (section 3)
+
+`firmware/ids.c` implements the paper's Algorithms 1 and 2 at every window end,
+in integer arithmetic scaled by 1000. `scripts/ids_model.py` is a bit-exact
+Python reference; `tests/test_firmware_consistency.py` replays the kept
+evidence logs and asserts that every firmware `DET` and `ALERT` record equals
+the model's output. `include/ids-k-table.h` is generated from the paper's
+polynomial by `scripts/gen_k_table.py` (k x 1000, clamped at 0).
+
+Blocking: a flagged neighbour is blocked for `IDS_TEMP_BLOCK_SEC` (60 s) while
+its `block_count` is below `IDS_BLOCK_THRESHOLD` (2), then permanently. Its
+DIS/DIO are dropped in the `rpl-icmp6.c` hook, so they can neither reset
+Trickle nor make it a parent. Counting continues while blocked, which is what
+lets repeated detections escalate as in the paper. Expiry is evaluated lazily
+on the next message from that neighbour, so the `BLOCK expire` line is stamped
+at that message, not at the exact 60 s mark.
+
+### Analytical finding: single-attacker blind spots
+
+Algorithm 1 uses the population standard deviation over the neighbour list,
+and the attacker is part of that list. By Samuelson's inequality the largest
+z-score any member of a sample of n can have is sqrt(n-1). A lone attacker
+is therefore detectable only where sqrt(n-1) > k(n):
+
+| neighbours n | sqrt(n-1) | k(n) | lone attacker detectable |
+|---|---|---|---|
+| 2-4 | 1.00-1.73 | 0.74-1.71 | yes (barely at 4) |
+| 5-7 | 2.00-2.45 | 2.03-2.45 | **no** |
+| 8-27 | 2.65-5.10 | 2.57-4.99 | yes |
+| 28-32 | 5.20-5.57 | 5.21-5.66 | **no** |
+| 33-40 | 5.66-6.24 | 1.29-5.61 | yes |
+
+This holds for any attack rate. It is a property of the published threshold,
+not of this implementation, and is encoded in `tests/test_threshold.py`.
+
+### Baseline false positives (seed 1, paper 300 s windows, 30 min)
+
+| Topology | decisions | DIO alerts | rate | permanent blocks |
+|---|---|---|---|---|
+| 10 nodes, 30 m | 215 | 6 | 2.8 % | 0 |
+| 30 nodes, 20 m | 1860 | 17 | 0.9 % | 0 |
+
+Every alert is a normal neighbour with 2-3 DIOs in a window where the others
+sent 0-1: with Trickle at its maximum interval a 5-minute window holds only
+0-4 DIOs per neighbour, so integer quantisation alone produces z-scores above
+k for small neighbourhoods. The paper reports 0.2-9.6 % FPR for the same
+reason.
+
 ## Adaptations from the paper (running list)
 
 | Paper (Contiki 2.7) | This project (Contiki-NG) | Why |

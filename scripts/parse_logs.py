@@ -17,14 +17,17 @@ import pandas as pd
 
 SCHEMAS = {
     "EV":    ["kind", "nbr"],
-    "NBR":   ["win", "nbr", "dio", "dis"],
+    "NBR":   ["win", "nbr", "dio", "dis", "dropped", "bstate"],
+    "DET":   ["win", "n", "mean_x1000", "sigma_x1000", "k_x1000", "thr_x1000"],
+    "ALERT": ["win", "nbr", "kind", "count", "thr_x1000"],
+    "BLOCK": ["nbr", "action", "block_count", "duration"],
     "WIN":   ["win", "n_heard", "n_rpl", "dio_sum", "dis_sum"],
     "PAR":   ["old", "new", "changes"],
     "TX":    ["seq"],
     "STAT":  ["rank", "parent", "parent_changes", "tx", "rpl_nbrs", "ids_nbrs"],
     "RX":    ["from", "seq"],
     "RSTAT": ["rx_total", "rpl_nbrs", "routes"],
-    "IDS":   ["_a", "_b", "_c", "_d", "_e"],
+    "IDS":   ["init", "window", "dis_thr", "block_thr", "temp_block", "warmup", "mode"],
 }
 
 
@@ -39,6 +42,8 @@ def parse(path):
             if tag not in SCHEMAS or not t.isdigit():
                 continue
             fields = parts[3:]
+            if tag == "IDS":      # key=value fields -> values only
+                fields = [f.split("=", 1)[1] if "=" in f else f for f in fields]
             cols = SCHEMAS[tag]
             fields = (fields + [None] * len(cols))[:len(cols)]
             rows[tag].append([int(t) / 1e6, int(mote)] + fields)
@@ -46,7 +51,7 @@ def parse(path):
     for tag, cols in SCHEMAS.items():
         df = pd.DataFrame(rows[tag], columns=["t", "mote"] + cols)
         for c in cols:
-            if c != "kind":
+            if c not in ("kind", "action", "init", "mode"):
                 df[c] = pd.to_numeric(df[c], errors="coerce")
         tables[tag] = df
     return tables
@@ -76,6 +81,14 @@ def summary(tables):
         out.append("neighbours heard per monitor (last window): "
                    f"mean={win.groupby('mote').n_heard.last().mean():.1f}, "
                    f"RPL table: mean={win.groupby('mote').n_rpl.last().mean():.1f}")
+    alert, det, block = tables["ALERT"], tables["DET"], tables["BLOCK"]
+    if len(det):
+        samples = nbr.groupby("win").size()
+        per_win = alert.groupby("win").size() if len(alert) else {}
+        out.append("alerts per window (samples = monitor x neighbour decisions): "
+                   + ", ".join(f"w{int(w)}: {int(per_win.get(w, 0))}/{int(samples[w])}" for w in samples.index))
+        out.append(f"alert kinds: {alert.kind.value_counts().to_dict() if len(alert) else {}}; "
+                   f"blocks: {block.action.value_counts().to_dict() if len(block) else {}}")
     return "\n".join(out)
 
 

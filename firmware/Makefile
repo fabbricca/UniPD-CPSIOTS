@@ -35,6 +35,12 @@ endif
 ifdef APP_SEND_INTERVAL_SEC
   CFLAGS += -DAPP_SEND_INTERVAL_SEC=$(APP_SEND_INTERVAL_SEC)
 endif
+ifdef IDS_DIS_THRESHOLD
+  CFLAGS += -DIDS_DIS_THRESHOLD=$(IDS_DIS_THRESHOLD)
+endif
+ifdef IDS_WARMUP_WINDOWS
+  CFLAGS += -DIDS_WARMUP_WINDOWS=$(IDS_WARMUP_WINDOWS)
+endif
 
 MAKE_ROUTING = MAKE_ROUTING_RPL_LITE
 MAKE_MAC = MAKE_MAC_CSMA
@@ -47,7 +53,7 @@ include $(CONTIKI)/Makefile.include
 # firmware/build/ across scenarios. Objects that depend on the tunables above
 # are made to depend on a stamp file that is rewritten only when the variant
 # string changes, so switching window/mode/interval recompiles exactly them.
-VARIANT_ID := mode-$(IDS_MODE)_win-$(IDS_WINDOW_SEC)_send-$(APP_SEND_INTERVAL_SEC)
+VARIANT_ID := mode-$(IDS_MODE)_win-$(IDS_WINDOW_SEC)_send-$(APP_SEND_INTERVAL_SEC)_dis-$(IDS_DIS_THRESHOLD)_warm-$(IDS_WARMUP_WINDOWS)
 VARIANT_STAMP := $(OBJECTDIR)/variant.stamp
 $(VARIANT_STAMP): FORCE
 	@mkdir -p $(dir $@)

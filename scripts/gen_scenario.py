@@ -85,6 +85,8 @@ def build(args):
         f"IDS_MODE={args.mode.upper()}",
         f"IDS_WINDOW_SEC={args.window}" if args.window else "",
         f"APP_SEND_INTERVAL_SEC={args.send_interval}" if args.send_interval else "",
+        f"IDS_DIS_THRESHOLD={args.dis_threshold}" if args.dis_threshold else "",
+        f"IDS_WARMUP_WINDOWS={args.warmup}" if args.warmup else "",
     ] if v)
     root = [mote_xml(1, *pos[1])]
     nodes = [mote_xml(i, *pos[i]) for i in range(2, args.nodes + 1)]
@@ -132,6 +134,8 @@ def main():
     ap.add_argument("--mode", choices=["paper", "sliding"], default="paper")
     ap.add_argument("--window", type=int, default=0, help="override IDS_WINDOW_SEC")
     ap.add_argument("--send-interval", type=int, default=0, help="override APP_SEND_INTERVAL_SEC")
+    ap.add_argument("--dis-threshold", type=int, default=0, help="override IDS_DIS_THRESHOLD (paper: 3)")
+    ap.add_argument("--warmup", type=int, default=0, help="override IDS_WARMUP_WINDOWS (paper: 0)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     out = pathlib.Path(args.out)
