@@ -14,8 +14,11 @@ import pathlib
 import pandas as pd
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-GROUP = ["nodes", "attack", "attackers", "mode", "window"]
-AGG = {"node_TPR": "%", "node_FPR": "%", "dec_FPR": "%", "detection_latency_sec": "s"}
+GROUP = ["nodes", "attack", "attackers", "mode", "window", "dis_threshold", "period_ms"]
+AGG = {"node_TPR": "%", "node_FPR": "%", "dec_FPR": "%", "detection_latency_sec": "s",
+       "pdr": "", "pdr_normal": "", "delay_mean_s": "s", "dio_rx_per_node_min": "/min",
+       "dis_rx_per_node_min": "/min", "parent_changes_per_node": "", "blocks_temp": "",
+       "blocks_perm": "", "temp_block_time_s": "s"}
 
 
 def summarise(df):
@@ -44,12 +47,19 @@ def main():
     s.to_csv(a.out, index=False)
     # Compact console view (paper Table III style).
     show = s[GROUP + ["seeds", "node_TPR_mean", "node_FPR_mean", "node_FPR_std",
-                      "detection_latency_sec_mean"]].copy()
-    show["node_TPR%"] = (show.pop("node_TPR_mean") * 100).round(1)
-    show["node_FPR%"] = (show.pop("node_FPR_mean") * 100).round(2)
-    show["FPR_std%"] = (show.pop("node_FPR_std") * 100).round(2)
-    show["latency_s"] = show.pop("detection_latency_sec_mean").round(0)
-    with pd.option_context("display.width", 160, "display.max_columns", None):
+                      "detection_latency_sec_mean", "pdr_mean", "delay_mean_s_mean",
+                      "dio_rx_per_node_min_mean", "parent_changes_per_node_mean",
+                      "blocks_perm_mean"]].copy()
+    show["TPR%"] = (show.pop("node_TPR_mean") * 100).round(1)
+    show["FPR%"] = (show.pop("node_FPR_mean") * 100).round(2)
+    show["FPRsd%"] = (show.pop("node_FPR_std") * 100).round(2)
+    show["lat_s"] = show.pop("detection_latency_sec_mean").round(0)
+    show["PDR"] = show.pop("pdr_mean").round(3)
+    show["delay_s"] = show.pop("delay_mean_s_mean").round(3)
+    show["DIO/node/min"] = show.pop("dio_rx_per_node_min_mean").round(2)
+    show["par_chg"] = show.pop("parent_changes_per_node_mean").round(2)
+    show["perm_blk"] = show.pop("blocks_perm_mean").round(1)
+    with pd.option_context("display.width", 220, "display.max_columns", None):
         print(show.to_string(index=False))
     print(f"\nwrote {a.out}")
 

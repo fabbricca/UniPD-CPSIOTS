@@ -10,6 +10,7 @@ Two groups:
 Usage:
   plot_results.py run  logs/<run>.log [--truth ...] [--outdir report/figures]
   plot_results.py matrix [results/matrix.csv] [--outdir report/figures]
+  plot_results.py topology simulations/<scenario>.csc [--outdir report/figures]
 """
 import argparse
 import pathlib
@@ -113,6 +114,41 @@ def plot_run(log, truth_path, outdir):
         _save(fig, outdir / f"{stem}.alerts_timeline.png")
 
 
+def plot_topology(csc, outdir, show_range=True):
+    """Node placement and roles read from a generated .csc (plan fig. 1)."""
+    import xml.etree.ElementTree as ET
+    root = ET.parse(csc).getroot()
+    tx_range = float(root.findtext(".//radiomedium/transmitting_range") or 50)
+    roles = {}  # id -> (x, y, role)
+    for mt in root.iter("motetype"):
+        desc = (mt.findtext("description") or "").lower()
+        role = "attacker" if "attacker" in desc else ("root" if "root" in desc else "normal")
+        for mote in mt.iter("mote"):
+            pos = mote.find(".//pos")
+            mid = int(mote.findtext(".//id"))
+            roles[mid] = (float(pos.get("x")), float(pos.get("y")), role)
+    fig, ax = plt.subplots(figsize=(6.5, 6.5))
+    style = {"root": ("limegreen", "s", 160), "normal": ("gold", "o", 110),
+             "attacker": ("mediumpurple", "o", 130)}
+    for role in ("normal", "attacker", "root"):
+        pts = [(x, y) for x, y, r in roles.values() if r == role]
+        if pts:
+            ax.scatter(*zip(*pts), c=style[role][0], marker=style[role][1], s=style[role][2],
+                       edgecolors="k", label=role, zorder=3)
+    for mid, (x, y, _) in roles.items():
+        ax.annotate(str(mid), (x, y), ha="center", va="center", fontsize=7, zorder=4)
+    if show_range:
+        first_atk = next((k for k, v in roles.items() if v[2] == "attacker"), 1)
+        x, y, _ = roles[first_atk]
+        ax.add_patch(plt.Circle((x, y), tx_range, fill=False, ls="--", color="0.5",
+                                label=f"{tx_range:g} m tx range of node {first_atk}"))
+    ax.set_aspect("equal"); ax.invert_yaxis()
+    ax.set_xlabel("x (m)"); ax.set_ylabel("y (m)")
+    ax.set_title(f"topology - {pathlib.Path(csc).stem}")
+    ax.legend(loc="lower right", fontsize=8)
+    _save(fig, outdir / f"topology-{pathlib.Path(csc).stem}.png")
+
+
 def plot_matrix(matrix, outdir):
     df = pd.read_csv(matrix)
     atk = df[df.attack != "baseline"]
@@ -137,14 +173,38 @@ def plot_matrix(matrix, outdir):
     # 6. Detection latency by attack rate (period_ms).
     lat = atk.dropna(subset=["detection_latency_sec"])
     if len(lat):
-        fig, ax = plt.subplots(figsize=(8, 4))
-        for attack, g in lat.groupby("attack"):
-            by = g.groupby("period_ms").detection_latency_sec
-            ax.errorbar(by.mean().index, by.mean(), yerr=by.std(ddof=0).fillna(0),
-                        marker="o", capsize=3, label=attack)
-        ax.set_xlabel("attack period (ms, lower = faster)"); ax.set_ylabel("latency (s)")
-        ax.set_title("detection latency by attack rate"); ax.legend()
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        def rate_label(pm):
+            return "random 5-60s" if int(pm) == 0 else f"{int(pm)/1000:g}s"
+        for (attack, mode), g in lat.groupby(["attack", "mode"]):
+            by = g.groupby("period_ms")
+            xs = [rate_label(pm) for pm in by.detection_latency_sec.mean().index]
+            axes[0].errorbar(xs, by.detection_latency_sec.mean(),
+                             yerr=by.detection_latency_sec.std(ddof=0).fillna(0),
+                             marker="o", capsize=3, label=f"{attack} / {mode}")
+            axes[1].plot(xs, by.node_TPR.mean() * 100, marker="o", label=f"{attack} / {mode}")
+        axes[0].set_ylabel("detection latency (s)"); axes[1].set_ylabel("node TPR (%)")
+        for ax in axes:
+            ax.set_xlabel("attack period"); ax.legend(fontsize=7)
+        fig.suptitle("detection latency and TPR by attack rate")
         _save(fig, outdir / "matrix.latency_by_rate.png")
+
+    # 6b. Network impact: PDR and DIO overhead, baseline vs attacks, per mode.
+    if "pdr" in df.columns and df.pdr.notna().any():
+        fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+        g = df.groupby(["attack", "mode"])
+        labels = [f"{a}\n{m}" for a, m in g.groups]
+        axes[0].bar(labels, g.pdr.mean() * 100, yerr=g.pdr.std(ddof=0).fillna(0) * 100, capsize=3)
+        axes[0].set_ylabel("PDR (%)"); axes[0].set_ylim(0, 105)
+        axes[0].set_title("packet delivery ratio")
+        axes[1].bar(labels, g.dio_rx_per_node_min.mean(),
+                    yerr=g.dio_rx_per_node_min.std(ddof=0).fillna(0), capsize=3)
+        axes[1].set_ylabel("DIO receptions / node / min")
+        axes[1].set_title("control-plane overhead")
+        for ax in axes:
+            ax.tick_params(axis="x", labelsize=8)
+        fig.suptitle("network impact: baseline vs attacks")
+        _save(fig, outdir / "matrix.network_impact.png")
 
     # 7. Mode comparison if both present: TPR/FPR/latency paper vs sliding.
     if df["mode"].nunique() > 1 and len(atk):
@@ -168,10 +228,13 @@ def main():
     m = sub.add_parser("matrix"); m.add_argument("matrix", nargs="?",
                                                  default=str(ROOT / "results" / "matrix.csv"))
     m.add_argument("--outdir", default=str(FIGS))
+    t = sub.add_parser("topology"); t.add_argument("csc"); t.add_argument("--outdir", default=str(FIGS))
     a = ap.parse_args()
     outdir = pathlib.Path(a.outdir)
     if a.cmd == "run":
         plot_run(a.log, a.truth, outdir)
+    elif a.cmd == "topology":
+        plot_topology(a.csc, outdir)
     else:
         plot_matrix(a.matrix, outdir)
 

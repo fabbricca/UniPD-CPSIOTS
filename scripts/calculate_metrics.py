@@ -68,6 +68,60 @@ def load_truth(path):
     return pd.read_csv(path)
 
 
+def network_metrics(tables, attackers):
+    """Network-impact metrics (PROJECT_PLAN section 10) from one run.
+
+    PDR and delay come from matching TX (node, seq) to RX (root, from, seq).
+    Control-plane overhead is DIO/DIS *receptions* summed over all monitors'
+    NBR records, normalised per monitor per minute. In sliding mode every
+    message is counted in IDS_SLIDE_BUCKETS consecutive evaluations, so the sum
+    is divided by that factor (6 for the default 6 x 10 s ring).
+    """
+    tx, rx, nbr, par, block, stat, ids, atk = (tables[k] for k in
+        ("TX", "RX", "NBR", "PAR", "BLOCK", "STAT", "IDS", "ATK"))
+    out = {}
+    normals = set(stat.mote.unique()) - set(attackers)
+    # Packet delivery ratio, all senders and normal senders only.
+    tx_n = len(tx)
+    rx_n = len(rx)
+    out["tx_total"], out["rx_total"] = int(tx_n), int(rx_n)
+    out["pdr"] = (rx_n / tx_n) if tx_n else float("nan")
+    tx_norm = tx[tx.mote.isin(normals)]
+    rx_norm = rx[rx["from"].isin(normals)]
+    out["pdr_normal"] = (len(rx_norm) / len(tx_norm)) if len(tx_norm) else float("nan")
+    # End-to-end delay via (sender, seq) join.
+    if tx_n and rx_n:
+        m = tx.rename(columns={"mote": "from", "t": "t_tx"})[["from", "seq", "t_tx"]].merge(
+            rx.rename(columns={"t": "t_rx"})[["from", "seq", "t_rx"]], on=["from", "seq"])
+        d = (m.t_rx - m.t_tx)
+        d = d[d >= 0]
+        out["delay_mean_s"] = float(d.mean()) if len(d) else float("nan")
+        out["delay_p95_s"] = float(d.quantile(0.95)) if len(d) else float("nan")
+    else:
+        out["delay_mean_s"] = out["delay_p95_s"] = float("nan")
+    # Control-plane overhead: receptions per monitor per minute.
+    mode = str(ids.iloc[0]["mode"]) if len(ids) else "paper"
+    factor = 6.0 if mode == "sliding" else 1.0
+    run_min = (float(nbr.t.max()) / 60.0) if len(nbr) else float("nan")
+    n_mon = nbr.mote.nunique() if len(nbr) else 0
+    if n_mon and run_min:
+        out["dio_rx_per_node_min"] = float(nbr.dio.sum()) / factor / n_mon / run_min
+        out["dis_rx_per_node_min"] = float(nbr.dis.sum()) / factor / n_mon / run_min
+    else:
+        out["dio_rx_per_node_min"] = out["dis_rx_per_node_min"] = float("nan")
+    # Routing churn and response.
+    n_nodes = stat.mote.nunique() if len(stat) else 0
+    out["parent_changes_per_node"] = (len(par) / n_nodes) if n_nodes else float("nan")
+    out["blocks_temp"] = int((block.action == "temp").sum()) if len(block) else 0
+    out["blocks_perm"] = int((block.action == "perm").sum()) if len(block) else 0
+    out["blocked_pairs"] = int(block[block.action.isin(["temp", "perm"])]
+                               .groupby(["mote", "nbr"]).ngroups) if len(block) else 0
+    temp_sec = int(ids.iloc[0]["temp_block"]) if len(ids) else 60
+    out["temp_block_time_s"] = out["blocks_temp"] * temp_sec
+    out["attacker_injections"] = int((atk.action == "send").sum()) if len(atk) else 0
+    return out
+
+
 def compute(tables, truth, window_sec):
     nbr, alert = tables["NBR"], tables["ALERT"]
     attackers = set(truth.attacker_id.astype(int)) if len(truth) else set()
@@ -145,7 +199,8 @@ def compute(tables, truth, window_sec):
     n_tpr, n_fpr, n_prec, n_f1 = rates(n_tp, n_fp, n_fn, n_tn)
     d_tpr, d_fpr, d_prec, d_f1 = rates(d_tp, d_fp, d_fn, d_tn)
     latency = (first_tp_t - start) if first_tp_t is not None else None
-    return {
+    net = network_metrics(tables, attackers)
+    return {**net,
         "attack_type": atype, "attackers": sorted(attackers),
         "attackers_heard": sorted(heard_attackers),
         "attackers_detected": sorted(node_flagged_correct),
