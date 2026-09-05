@@ -14,7 +14,7 @@ import pathlib
 import pandas as pd
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-GROUP = ["nodes", "attack", "attackers", "mode", "window", "dis_threshold", "period_ms"]
+GROUP = ["nodes", "attack", "attackers", "mode", "window", "dis_threshold", "period_ms", "tag"]
 AGG = {"node_TPR": "%", "node_FPR": "%", "dec_FPR": "%", "detection_latency_sec": "s",
        "pdr": "", "pdr_normal": "", "delay_mean_s": "s", "dio_rx_per_node_min": "/min",
        "dis_rx_per_node_min": "/min", "parent_changes_per_node": "", "blocks_temp": "",

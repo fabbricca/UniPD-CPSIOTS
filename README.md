@@ -212,6 +212,30 @@ normal nodes so one flag is >10%); the decision-level FPR is ~1% and the paper
 preset (20/30/40 nodes, 300 s windows, 5 seeds) is where these average down.
 The pipeline itself is validated here; the final numbers come from section 6.
 
+## Final results (section 6)
+
+Main matrix: 20/30/40 nodes x 1/20%/30% attackers x paper+sliding x 5 seeds,
+plus DIS-threshold (2/3/5) and attack-rate (1/5/10/30 s, random 5-60 s) sweeps
+at 3 seeds. 148 runs, all reproducible (`results/repeatability.txt`: same seed
+gives byte-identical logs). Full write-up in `report/report.md`; per-run rows in
+`results/matrix.csv`, per-configuration summary in `results/summary.csv`.
+
+| headline | value |
+|---|---|
+| DIS attack, every size/fraction, both modes | TPR 100 %, FPR 0 % (paper reproduced) |
+| neighbour attack, 1 attacker | TPR 100 %, FPR 7 % (paper mode) |
+| neighbour attack, 20 % / 30 % attackers | TPR 33 % / 5 % (masking, finding 2) |
+| sliding vs paper (mean over attacks) | latency 225 s -> 28 s, FPR 1.5 % -> 11 %, TPR 73 % -> 77 % |
+| sliding, slow DIS (>= 30 s period) | missed: fixed threshold 3 does not fit a 60 s window (finding 3) |
+| sliding, baseline | ~100 permanent blocks per run: response parameters need re-tuning |
+| DIS attack control-plane cost | DIO receptions x6 (1 attacker) to x13 (30 %); sliding halves it |
+| PDR / delay under attack | unchanged (1.0 / ~40-60 ms): lossless UDGM, light traffic |
+| IDS module on Tmote Sky | ~2 KB ROM, ~0.6 KB RAM (`results/overhead.txt`) |
+
+Reproduce: `./run.sh matrix --preset paper --seeds 1 2 3 4 5 --modes paper sliding`,
+then `--preset dis-threshold --append`, `--preset rates --modes paper sliding --append`,
+`./run.sh aggregate`, `./run.sh plot matrix`. Demo script: `report/demo.md`.
+
 ## Adaptations from the paper (running list)
 
 | Paper (Contiki 2.7) | This project (Contiki-NG) | Why |

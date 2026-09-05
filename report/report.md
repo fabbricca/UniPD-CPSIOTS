@@ -120,9 +120,12 @@ Topology is the paper's grid: root at top centre, nodes on a 20 m grid in a
 Traffic is constant-bit-rate UDP to the root every 30 s. Attacks start 75 s
 after boot (paper value) and last 10 minutes. The final matrix covers 20, 30
 and 40 nodes with 1, 20% and 30% attackers, each in both detector modes, over
-3 independent seeds (the plan permits 3 when runtime is limited; more can be
-added by re-running the resumable matrix driver). Development used 10-node,
-5-minute runs.
+5 independent seeds. Two sweeps (DIS threshold 2/3/5; attack period 1, 5, 10,
+30 s and the paper's random 5-60 s) use 3 seeds. Cooja is deterministic per
+seed: the same scenario run twice gave byte-identical logs
+(`results/repeatability.txt`), so seed-to-seed spread reflects attacker
+placement and timer jitter, not run noise. Development used 10-node, 5-minute
+runs.
 
 The **sample unit** matters. Node-level metrics classify each node once (the
 paper's Table III view): an attacker is a true positive if any monitor raises
@@ -149,7 +152,7 @@ stays at or below the threshold.
 
 A **single** neighbour attacker is detected at 100% TPR (20 nodes). But TPR
 **collapses as the attacker fraction grows**: with 20% attackers it falls to
-27.8% (30 nodes, 20% attackers) and to 2.8% (40 nodes, 30% attackers), mean over 3 seeds (Table 1).
+33% (30 nodes, 20% attackers) and to 5% (40 nodes, 30% attackers), mean over 5 seeds (Table 1).
 Two mechanisms explain this, both rooted in the same statistics.
 
 **Finding 1 - single-attacker blind spots.** Algorithm 1 divides by the
@@ -212,36 +215,111 @@ one window is universally better, but that the trade-off is explicit and
 measurable, and that faster detection matters most exactly where the fixed
 window is slowest (large windows chosen to suppress false positives).
 
-**Table 1. Full matrix, node-level, mean over 3 seeds** (`results/summary.csv`).
+**Table 1. Main matrix, node-level, mean over 5 seeds** (`results/summary.csv`).
+FPR is mean ± sd across seeds; DIO is receptions per node per minute (baseline
+4.6); perm = permanent blocks issued network-wide in 30 min.
 
-| nodes | attack | attackers | mode | TPR % | FPR % | latency s |
-|---|---|---|---|---|---|---|
-| 20 | DIS | 1 | paper | 100 | 0.0 | 225 |
-| 20 | DIS | 1 | sliding | 100 | 0.0 | 45 |
-| 30 | DIS | 20% | paper | 100 | 0.0 | 225 |
-| 30 | DIS | 20% | sliding | 100 | 0.0 | 45 |
-| 40 | DIS | 30% | paper | 100 | 0.0 | 225 |
-| 40 | DIS | 30% | sliding | 100 | 0.0 | 15 |
-| 20 | neighbour | 1 | paper | 100 | 12.3 | 225 |
-| 20 | neighbour | 1 | sliding | 100 | 64.9 | 28 |
-| 30 | neighbour | 20% | paper | 27.8 | 2.8 | 225 |
-| 30 | neighbour | 20% | sliding | 50.0 | 16.7 | 12 |
-| 40 | neighbour | 30% | paper | 2.8 | 0.0 | 225 |
-| 40 | neighbour | 30% | sliding | 8.3 | 0.0 | 5 |
+| nodes | attack | attackers | mode | seeds | TPR % | FPR % | latency s | DIO/node/min | perm blocks |
+|---|---|---|---|---|---|---|---|---|---|
+| 20 | DIS | 1 | paper | 5 | 100.0 | 0.0 ± 0.0 | 225 | 27.4 | 13 |
+| 20 | DIS | 1 | sliding | 5 | 100.0 | 0.0 ± 0.0 | 45 | 7.1 | 94 |
+| 30 | DIS | 20% | paper | 5 | 100.0 | 0.0 ± 0.0 | 225 | 41.9 | 62 |
+| 30 | DIS | 20% | sliding | 5 | 100.0 | 0.0 ± 0.0 | 45 | 15.3 | 126 |
+| 40 | DIS | 30% | paper | 5 | 100.0 | 0.0 ± 0.0 | 225 | 61.0 | 112 |
+| 40 | DIS | 30% | sliding | 5 | 100.0 | 0.0 ± 0.0 | 15 | 23.6 | 170 |
+| 20 | neighbour | 1 | paper | 5 | 100.0 | 7.4 ± 7.1 | 225 | 6.2 | 11 |
+| 20 | neighbour | 1 | sliding | 5 | 100.0 | 52.6 ± 26.4 | 29 | 5.4 | 92 |
+| 30 | neighbour | 20% | paper | 5 | 33.3 | 1.7 ± 3.3 | 225 | 11.5 | 3 |
+| 30 | neighbour | 20% | sliding | 5 | 46.7 | 12.5 ± 7.0 | 25 | 9.8 | 103 |
+| 40 | neighbour | 30% | paper | 5 | 5.0 | 0.0 ± 0.0 | 225 | 24.3 | 2 |
+| 40 | neighbour | 30% | sliding | 5 | 13.3 | 1.4 ± 2.9 | 11 | 20.5 | 105 |
 
-Averaged over the attack scenarios, the sliding window cuts mean detection
-latency from 225 s to ~25 s while raising the mean node-level FPR from 2.5% to
-13.5% and, notably, raising mean TPR from 72% to 76%: the shorter window
-captures an attacker's burst before the other attackers' counts accumulate into
-the mean, so it partly resists the masking of finding 2. Figures:
-`report/figures/matrix.mode_comparison.png` (this trade-off in one view),
-`matrix.tpr_fpr_by_size.png`, `matrix.latency_by_rate.png`.
+Averaged over the six attack configurations, the sliding window cuts mean
+detection latency from 225 s to 28 s, raises mean node-level FPR from 1.5% to
+11.1%, and raises mean TPR from 73% to 77%: the shorter window captures an
+attacker's burst before the other attackers' counts accumulate into the mean,
+so it partly resists the masking of finding 2. It also **halves the DIO storm
+caused by DIS attacks** (e.g. 61 to 24 receptions/node/min at 40 nodes, 30%
+attackers) because it blocks the flooders sooner, before they trigger further
+Trickle resets. Figures: `matrix.mode_comparison.png`, `matrix.tpr_fpr_by_size.png`.
 
-The node-level baseline FPR is high for the sliding window (it evaluates ~30x
-more often, so over a run almost every normal node is flagged once by
-quantisation); the per-decision FPR, which normalises by the number of
-decisions, is close between the modes. The node-level figure is the pessimistic
-reading and is reported as such.
+Two costs are equally clear. First, node-level baseline FPR reaches 100% in
+sliding mode (41% in paper mode): evaluating every 10 s gives each normal node
+~180 chances per run to be flagged once by integer quantisation. Second, and
+more serious, sliding mode issues **~100 permanent blocks per run even with no
+attacker**, versus 0 for the paper mode, because the paper's blocking parameters
+(two temporary blocks, then permanent) were calibrated for one decision per 5
+minutes, not 30 per 5 minutes. A sliding detector must therefore raise the
+block threshold or require consecutive confirmations; with the paper's values
+it over-blocks the network. The per-decision FPR is close between the modes.
+
+### 8.5 Network impact
+
+Measured on the paper-mode matrix (`matrix.network_impact.png`):
+
+| nodes | attack | PDR | mean delay ms | DIO rx/node/min | parent changes/node |
+|---|---|---|---|---|---|
+| 20 | baseline | 1.000 | 38 | 4.6 | 1.00 |
+| 20 | neighbour, 1 | 1.000 | 38 | 6.2 | 1.06 |
+| 20 | DIS, 1 | 1.000 | 38 | 27.4 | 1.06 |
+| 30 | neighbour, 20% | 1.000 | 50 | 11.5 | 1.26 |
+| 30 | DIS, 20% | 1.000 | 51 | 41.9 | 1.27 |
+| 40 | neighbour, 30% | 1.000 | 63 | 24.3 | 1.44 |
+| 40 | DIS, 30% | 1.000 | 64 | 61.0 | 1.44 |
+
+Packet delivery stays at 1.0 and end-to-end delay is unchanged by the attacks:
+UDGM with success ratio 1.0 and one 30 s datagram per node leaves the channel
+far from saturation, so these attacks cost energy and stability rather than
+delivery in this setting (a lossy radio model would change that). The damage
+shows in the control plane: a single DIS attacker multiplies DIO receptions
+sixfold, and 30% DIS attackers by thirteen, because each DIS resets every
+receiver's Trickle timer. Parent changes rise from 1.0 to 1.44 per node. The
+neighbour attack is cheaper for the network, adding mainly its own DIOs.
+
+### 8.6 DIS threshold sensitivity
+
+Paper mode, 20 nodes, one DIS attacker at the paper's random 5-60 s rate, 3
+seeds each:
+
+| DIS threshold | TPR % | FPR % (DIS rule) | latency s |
+|---|---|---|---|
+| 2 | 100 | 0.0 | 225 |
+| 3 (paper) | 100 | 0.0 | 225 |
+| 5 | 100 | 0.0 | 325 |
+
+Detection is insensitive to the threshold in this range because normal nodes
+never exceed 2 DIS per 5-minute window and the attacker sends about 10.
+Threshold 5 only delays detection when a window happens to hold few attacker
+DIS. The paper's choice of 3 is well placed.
+
+### 8.7 Attack-rate sweep
+
+20 nodes, one attacker, 3 seeds; cells are TPR / mean latency
+(`matrix.latency_by_rate.png`):
+
+| attack | period | paper mode | sliding mode | DIO rx/node/min |
+|---|---|---|---|---|
+| DIS | 1 s | 100 % / 225 s | 100 % / 5 s | 33.4 |
+| DIS | 5 s | 100 % / 225 s | 100 % / 25 s | 33.0 |
+| DIS | 10 s | 100 % / 225 s | 100 % / 45 s | 25.1 |
+| DIS | 30 s | 100 % / 225 s | **0 %** / - | 17.5 |
+| DIS | random 5-60 s | 100 % / 225 s | **33 %** / 575 s | 15.7 |
+| neighbour | 1 s | 100 % / 225 s | 100 % / 5 s | 19.5 |
+| neighbour | 5 s | 100 % / 225 s | 100 % / 22 s | 7.5 |
+| neighbour | 10 s | 100 % / 225 s | 100 % / 28 s | 6.0 |
+| neighbour | 30 s | 100 % / 225 s | 100 % / 55 s | 5.0 |
+| neighbour | random 5-60 s | 100 % / 225 s | 100 % / 38 s | 4.9 |
+
+The paper mode detects every rate with the same one-window latency. Sliding
+latency scales with the attack period, down to 5 s for an aggressive attacker.
+But sliding mode **misses slow DIS attackers**: a DIS every 30 s puts at most
+two in a 60 s window, never above the fixed threshold of 3 that the paper
+calibrated on 5-minute windows, so the random 5-60 s attacker is caught in only
+one seed in three and the 30 s attacker never. **Finding 3:** a fixed count
+threshold must scale with the window length; the sliding variant needs either
+a threshold of ~1 per 60 s (with the false-positive risk that implies) or a
+rate-based rule. The neighbour rule, being relative to the neighbourhood, has
+no such dependence and is detected at every rate in both modes.
 
 ## 9. Discussion
 
@@ -252,14 +330,22 @@ residue of integer quantisation over sparse Trickle traffic. Its weaknesses are
 structural, not incidental: the population-standard-deviation threshold has
 built-in blind spots at particular neighbourhood sizes and degrades sharply
 under multiple colluding attackers. Detection latency is bounded below by the
-window length, which the sliding variant addresses at a quantified cost.
+window length, which the sliding variant addresses at a quantified cost: much
+higher node-level false positives, over-blocking with the paper's response
+parameters, and blindness to slow DIS attackers under a fixed count threshold.
+Its unexpected benefits are partial resistance to masking and a halved DIO
+storm under DIS attack, because flooders are blocked before they reset many
+Trickle timers. Network impact in this lossless simulation is confined to the
+control plane; delivery is unaffected.
 
 ## 10. Limitations and future work
 
 The evaluation is simulation-only with static nodes, a known-ground-truth
-configuration, and the two control-plane attacks of the paper. The multi-attacker
+configuration, and the two control-plane attacks of the paper. The radio model is
+lossless, so delivery and delay impacts are lower bounds. The multi-attacker
 TPR gap versus the paper deserves a controlled study of attacker placement and
-of the rebroadcast-on-receipt attacker. Future work: a mitigation for the
+of the rebroadcast-on-receipt attacker. Future work: window-scaled or rate-based DIS thresholds and confirmation-based
+blocking for the sliding detector; a mitigation for the
 masking effect (for example a robust/median-based dispersion estimate, or
 excluding already-suspected neighbours from the profile), mobility, and real
 Tmote Sky or nRF hardware once logging is trimmed to fit.
@@ -271,7 +357,29 @@ from purely local observations: the DIS attack is detected with 100% TPR and 0%
 FPR, and a single neighbour attacker is reliably detected, reproducing the
 paper on Contiki-NG. The reproduction also exposes two limits of the published
 threshold - size-dependent blind spots and masking under collusion - and shows
-that a sliding observation window roughly halves detection latency at a
-measurable cost in false positives. The research question is answered: yes, with
+that a sliding observation window cuts detection latency by an order of
+magnitude and halves the DIS-induced DIO storm, at the cost of far more false
+positives, over-blocking unless the response parameters are re-tuned, and a
+fixed DIS threshold that no longer matches the window. The research question is answered: yes, with
 the caveat that the dynamic threshold's statistics bound both which lone
 attackers and how many simultaneous attackers it can catch.
+
+---
+
+## Appendix: figures and files
+
+| figure | file |
+|---|---|
+| topology, 40 nodes, 30% attackers (paper Fig. 6 layout) | `report/figures/topology-m-40-neighbor-a30pct-w300-paper-s1.png` |
+| DIO and DIS per neighbour over time | `report/figures/m-10-*-dio_over_time.png`, `*-dis_over_time.png` |
+| threshold vs attacker count at the detecting monitor | `report/figures/m-20-neighbor-a1-w300-paper-s1.threshold_vs_count.png` |
+| alerts on the timeline | `report/figures/m-10-neighbor-a1-w60-paper-s1.alerts_timeline.png` |
+| TPR and FPR by network size | `report/figures/matrix.tpr_fpr_by_size.png` |
+| latency and TPR by attack rate | `report/figures/matrix.latency_by_rate.png` |
+| PDR and DIO overhead, baseline vs attacks | `report/figures/matrix.network_impact.png` |
+| paper vs sliding detector | `report/figures/matrix.mode_comparison.png` |
+
+Data: `results/matrix.csv` (one row per run), `results/summary.csv` (per
+configuration, mean/sd/min/max), `results/overhead.txt`,
+`results/repeatability.txt`. Kept run logs: `report/evidence/`. Demo script:
+`report/demo.md`.

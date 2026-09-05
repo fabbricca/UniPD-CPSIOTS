@@ -171,22 +171,31 @@ def plot_matrix(matrix, outdir):
         _save(fig, outdir / "matrix.tpr_fpr_by_size.png")
 
     # 6. Detection latency by attack rate (period_ms).
-    lat = atk.dropna(subset=["detection_latency_sec"])
-    if len(lat):
-        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+    # Use the dedicated rate sweep (tag p<period>) when present so one topology
+    # and attacker count are held fixed; otherwise fall back to all attack rows.
+    tags = df["tag"].fillna("").astype(str) if "tag" in df.columns else None
+    sweep = atk[tags.loc[atk.index].str.startswith("p")] if tags is not None else atk
+    if len(sweep) == 0:
+        sweep = atk
+    if len(sweep):
+        order = sorted(sweep.period_ms.unique(), key=lambda pm: (pm == 0, pm))  # random last
         def rate_label(pm):
-            return "random 5-60s" if int(pm) == 0 else f"{int(pm)/1000:g}s"
-        for (attack, mode), g in lat.groupby(["attack", "mode"]):
+            return "random\n5-60s" if int(pm) == 0 else f"{int(pm)/1000:g}s"
+        xs_all = [rate_label(pm) for pm in order]
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        for (attack, mode), g in sweep.groupby(["attack", "mode"]):
             by = g.groupby("period_ms")
-            xs = [rate_label(pm) for pm in by.detection_latency_sec.mean().index]
-            axes[0].errorbar(xs, by.detection_latency_sec.mean(),
-                             yerr=by.detection_latency_sec.std(ddof=0).fillna(0),
-                             marker="o", capsize=3, label=f"{attack} / {mode}")
-            axes[1].plot(xs, by.node_TPR.mean() * 100, marker="o", label=f"{attack} / {mode}")
-        axes[0].set_ylabel("detection latency (s)"); axes[1].set_ylabel("node TPR (%)")
+            tpr = by.node_TPR.mean().reindex(order)
+            lat_m = by.detection_latency_sec.mean().reindex(order)
+            lat_s = by.detection_latency_sec.std(ddof=0).reindex(order).fillna(0)
+            axes[0].errorbar(xs_all, lat_m, yerr=lat_s, marker="o", capsize=3,
+                             label=f"{attack} / {mode}")
+            axes[1].plot(xs_all, tpr * 100, marker="o", label=f"{attack} / {mode}")
+        axes[0].set_ylabel("detection latency (s)  [missing = not detected]")
+        axes[1].set_ylabel("node TPR (%)"); axes[1].set_ylim(-5, 105)
         for ax in axes:
             ax.set_xlabel("attack period"); ax.legend(fontsize=7)
-        fig.suptitle("detection latency and TPR by attack rate")
+        fig.suptitle("detection latency and TPR by attack rate (20 nodes, 1 attacker)")
         _save(fig, outdir / "matrix.latency_by_rate.png")
 
     # 6b. Network impact: PDR and DIO overhead, baseline vs attacks, per mode.
