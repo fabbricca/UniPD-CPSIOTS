@@ -1,0 +1,697 @@
+% ============================================================
+%  G2 Esports Web Usability Analysis
+%  Web Information Management, UniPD Master CS
+% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+% --- Encoding & language ------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% --- Page geometry ------------------------------------------
+\usepackage[
+  top=2.5cm, bottom=2.5cm,
+  left=3cm,  right=3cm
+]{geometry}
+
+% --- Typography ---------------------------------------------
+\usepackage{microtype}
+\usepackage{lmodern}
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Headers & footers --------------------------------------
+\usepackage{fancyhdr}
+\setlength{\headheight}{13.6pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Web Information Management}
+\fancyhead[R]{\small G2 Esports Usability Analysis}
+\fancyfoot[C]{\small \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Section formatting (mirrors reference papers) ----------
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+% --- Graphics -----------------------------------------------
+\usepackage{graphicx}
+\usepackage{float}
+% All figures live in the img/ subfolder.
+\graphicspath{{img/}}
+
+% --- Captions -----------------------------------------------
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf, justification=centering}
+
+% --- Tables -------------------------------------------------
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+
+% --- Hyperlinks ---------------------------------------------
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  citecolor=black
+]{hyperref}
+
+% --- Miscellaneous ------------------------------------------
+\usepackage{parskip}        % space between paragraphs instead of indent
+\usepackage{enumitem}       % fine-grained list control
+\usepackage{xcolor}
+\usepackage{csquotes}
+
+% ============================================================
+%  DOCUMENT
+% ============================================================
+\begin{document}
+
+% ---- Title page --------------------------------------------
+\begin{titlepage}
+  \centering
+
+  % University logo -- save as img/unipd_logo.png
+  \includegraphics[width=0.35\textwidth]{unipd_logo}
+
+  \vspace{0.4cm}
+  {\large\scshape Università degli Studi di Padova}\\[0.1cm]
+  {\normalsize Department of Mathematics ``Tullio Levi-Civita''}\\[0.1cm]
+  {\normalsize Master's Degree in Computer Science}\\[0.1cm]
+  {\normalsize Academic year 2025/2026}
+
+  \vspace{1.2cm}
+  \rule{\linewidth}{0.5pt}\\[0.3cm]
+  {\LARGE\bfseries Web Information Management}\\[0.4cm]
+  {\large Usability analysis of}\\[0.3cm]
+  {\large\color{blue}\url{https://g2esports.com/}}\\[0.3cm]
+  {\large website}\\[0.2cm]
+  \rule{\linewidth}{0.5pt}
+
+  \vspace{0.8cm}
+  % G2 logo -- save as img/g2_logo.png
+  \includegraphics[width=0.25\textwidth]{g2_logo}
+
+  \vfill
+  {\normalsize Author: \textbf{Riccardo Fabbian}}\\[0.2cm]
+  {\normalsize Student ID: \textbf{2140711}}\\[0.2cm]
+  {\normalsize Period of analysis: \textbf{February--March 2026}}
+\end{titlepage}
+
+% ---- Table of contents -------------------------------------
+\newpage
+\tableofcontents
+
+% ---- List of figures ---------------------------------------
+\newpage
+\listoffigures
+
+% ============================================================
+\newpage
+\section{Introduction}
+% ============================================================
+
+Over the years the internet has become the main way that brands, organisations, and communities show themselves to the world. The number of websites keeps growing, but more websites does not mean better websites: many sites are poorly designed, making them harder to use and pushing visitors away. For this reason, web usability has become an important area of study in computer science and human-computer interaction.
+
+\begin{displayquote}
+\textit{``Web usability is the discipline that studies how to design and then create a usable website. A website is usable if it is easy to access and navigate, and if it satisfies the information needs of its users.''}
+\end{displayquote}
+
+The aim of this document is to analyse a real website against established usability principles, looking at both what it does well and where it falls short. The website analysed is the official G2 Esports website (\url{https://g2esports.com/}). Only the desktop version has been considered; the analysis was carried out during February--March 2026 at full browser window size.
+
+% -----------------------------------------------------------
+\subsection{The Company}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.3\textwidth]{fig01_g2_logo}
+  \caption{G2 Esports logo}
+  \label{fig:g2logo}
+\end{figure}
+
+G2 Esports is a European professional esports organisation founded in 2014 by Carlos ``ocelote'' Rodríguez. Over a decade, it has grown into one of the most well-known brands in competitive gaming, with professional teams in League of Legends, Valorant, Counter-Strike 2, Rainbow Six Siege, and Rocket League.
+
+Based in Berlin, Germany, G2 Esports is recognised internationally both for its competitive results (including multiple European championship titles and appearances at the League of Legends World Championship) and for its strong brand identity. The organisation is known for its bold communication style, active social media presence, and the Samurai visual style that defines its branding.
+
+Beyond competitive gaming, G2 Esports also works as a media and lifestyle brand. It produces content across platforms, runs a merchandise store, and has signed sponsorship deals with major companies outside the gaming industry. This dual role as both a sports team and a lifestyle brand directly shapes how the website is designed.
+
+% -----------------------------------------------------------
+\subsection{The Website Purpose}
+% -----------------------------------------------------------
+
+The G2 Esports website serves several purposes at once, it works as:
+
+\begin{itemize}[noitemsep]
+  \item a \textbf{brand showcase}: communicating the identity, values, and style of the organisation to fans and potential sponsors;
+  \item a \textbf{team hub}: presenting rosters, player profiles, and competitive results across all active titles;
+  \item a \textbf{media platform}: publishing news articles, match recaps, and editorial content;
+  \item an \textbf{e-commerce gateway}: directing users to the G2 store for merchandise;
+  \item a \textbf{recruitment portal}: listing job opportunities via the Careers section.
+\end{itemize}
+
+These different purposes create a conflict in how the site is structured: a page designed to impress a potential sponsor has different requirements from one intended to help a fan quickly find a match schedule.
+
+% -----------------------------------------------------------
+\subsection{The Site Name}
+% -----------------------------------------------------------
+
+The site name is one of the first usability signals a user encounters, even before visiting the website. Research shows that a domain name can affect users' overall satisfaction by 10\% to 20\%; for this reason, a site name must be chosen carefully.
+
+The domain of the analysed website is \texttt{g2esports.com}. Evaluating it against standard naming criteria:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Short and easy to memorise:} partially satisfied. ``g2esports'' is nine characters, which is longer than ideal, though still manageable. The shorthand ``G2'' is widely recognised within the esports community and is the name used in everyday speech.
+  \item \textbf{Unique:} satisfied. The combination ``G2 Esports'' is strongly associated with this specific organisation and is unlikely to be confused with other groups by the target audience.
+  \item \textbf{Formed by recognisable words:} partially satisfied. ``esports'' is a well-established word in the gaming context; ``G2'', however, is a pure brand name with no inherent meaning.
+  \item \textbf{Sounds well:} satisfied. The name is easy to say and remember.
+  \item \textbf{Uses the \texttt{.com} top-level domain:} satisfied. The \texttt{.com} TLD is more trusted by users than alternatives such as \texttt{.gg}, which would arguably fit a gaming organisation better.
+\end{itemize}
+
+An important point is the ambiguity of the ``G2'' identifier. Outside the esports community, ``G2'' can refer to a guitar model, an Intel graphics tier, a Google developer conference stage, or a cell-cycle phase. The word ``esports'' in the domain helps clarify this, but it also makes the domain longer.
+
+It is also worth noting that \texttt{g2.com} belongs to an entirely unrelated enterprise software platform, which can confuse users who search for only ``G2'' in a search engine.
+
+% -----------------------------------------------------------
+\subsection{SERP Positioning}
+% -----------------------------------------------------------
+
+To evaluate the SERP (Search Engine Results Page) positioning of the G2 Esports website, several searches of different types were tested, from the exact brand name to broad category terms. The results are summarised below.
+
+\begin{table}[H]
+  \centering
+  \begin{tabularx}{\textwidth}{lX}
+    \toprule
+    \textbf{Query} & \textbf{Approximate position} \\
+    \midrule
+    ``g2 esports''          & 1st (expected) \\
+    ``g2''                  & Not in top 10 (dominated by unrelated results) \\
+    ``esports team''        & 8th--12th \\
+    ``lol esports team europe'' & 3rd--5th \\
+    ``valorant team''       & 5th--7th \\
+    ``buy esports jersey''  & Not in top 10 \\
+    ``g2 merch''            & 2nd--3rd \\
+    \bottomrule
+  \end{tabularx}
+  \caption{SERP positions for selected queries (March 2025)}
+  \label{tab:serp}
+\end{table}
+
+The site shows a pattern common to sports team websites: strong ranking on branded and specific searches, weak ranking on broad category terms. The main limitation is the brand name ``G2'', which is too short and too ambiguous to rank well on non-branded searches. The organisation's SEO strategy seems focused on keeping existing fans rather than attracting new ones.
+
+% ============================================================
+\newpage
+\section{Homepage Analysis}
+% ============================================================
+
+\textit{The homepage is the showcase of the website. It must give a clear idea of the content of the inner pages and, above all, provide the user with all the necessary information clearly and as quickly as possible. A good homepage must be able to answer the six informative axes.}
+
+% -----------------------------------------------------------
+\subsection{Overview}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig02_homepage_hero}
+  \caption{G2 Esports homepage, above-the-fold view}
+  \label{fig:homepage_hero}
+\end{figure}
+
+When a user arrives at the G2 Esports homepage for the first time, the immediate impression is one of strong visual impact. The page opens with a full-width hero section filling the entire browser viewport: a dark background with high-contrast text, geometric shapes, and imagery tied to the Samurai style that defines the G2 brand.
+
+Scrolling down reveals a series of distinct content sections:
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig03_homepage_news}
+  \caption{Homepage, news and latest content section}
+  \label{fig:homepage_news}
+\end{figure}
+
+A section dedicated to the latest news and content, presented as a grid of article cards, each consisting of a thumbnail image, and a headline. This section should serve as the primary \textsc{when} indicator on the homepage but currently lacks a clear date indicator.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig04_homepage_teams}
+  \caption{Homepage, teams and games section}
+  \label{fig:homepage_teams}
+\end{figure}
+
+A grid showing the active esports titles under the G2 banner. Each tile represents one title and leads to the dedicated team page. This section is one of the most useful parts of the homepage.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig05_homepage_footer}
+  \caption{Homepage, footer}
+  \label{fig:homepage_footer}
+\end{figure}
+
+The footer contains links to legal pages, social media handles, a newsletter subscription form, and secondary navigation including Careers and About. At a high level, the homepage tries to balance brand impact with practical navigation, a tension already visible here: the hero section is dedicated almost entirely to visual impression, while the useful sections appear lower on the page.
+
+% -----------------------------------------------------------
+\subsection{Informative Axes}
+% -----------------------------------------------------------
+
+The six informative axes (\textsc{where}, \textsc{who}, \textsc{why}, \textsc{what}, \textsc{when}, and \textsc{how}) provide a framework for evaluating whether the essential information is clearly communicated to users. Users visiting a new website try to find answers to these axes as quickly as possible; if they cannot, they typically leave. Each of the following subsections analyses one axis.
+
+\subsubsection{WHERE: Did the user arrive in the right place?}
+
+\textit{Where am I?} This is the first question a new user asks when landing on an unfamiliar website.
+
+For a user already familiar with G2 Esports, the \textsc{where} axis is satisfied immediately: the G2 logo in the top-left corner of the navigation bar is a clear identifier, reinforced by gaming imagery and labels such as ``TEAMS'' and ``NEWS''.
+
+For a user new to esports who arrived through a general web search, the answer is less clear. The hero section prioritises visual impact over informative content. There is no short description beneath the logo clarifying that this is a professional esports organisation; the brand relies on visual recognition rather than explicit communication.
+
+The absence of a breadcrumb on the homepage is acceptable: the homepage is by definition the root of the navigation tree, and a breadcrumb would be redundant here. The situation is different on internal pages, as discussed in Chapter~\ref{sec:internal}.
+
+\subsubsection{WHO: Who is behind the website?}
+
+\textit{Who is behind this website?} Knowing the owner increases the user's trust and is an important usability factor.
+
+For the target audience, the \textsc{who} axis is immediately and strongly satisfied: the G2 logo carries significant recognition within the gaming community. The problem is the same as in the \textsc{where} analysis: a user outside the target audience cannot easily find a \textsc{who} answer from the above-the-fold content. There is no ``About G2'' link in the primary navigation; this information is only in the footer.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig06_footer_about}
+  \caption{Footer, secondary navigation showing the ``About G2'' link}
+  \label{fig:footer_about}
+\end{figure}
+
+Research shows that only about 23\% of users scroll to the bottom of a homepage on their first visit. Placing the only explicit \textsc{who} entry point in the footer means that most new users will never find it, which reflects the site's assumption that its audience already knows who G2 is.
+
+\subsubsection{WHY: Why should the user stay?}
+
+\textit{Why should I stay on this website? What do I gain from it?}
+
+The G2 Esports homepage does not provide a clear value proposition. There is no statement communicating ``follow your favourite team, get the latest esports news, and shop the official G2 collection.'' The homepage assumes that users who arrive already want to be there.
+
+This pattern is common on brand-driven websites: visual identity takes priority over persuasion. The message is ``look how cool this is'' rather than ``here is why this site is useful to you.'' For a loyal fan base this works well; for casual visitors it is a missed opportunity to turn them into fans.
+
+\subsubsection{WHAT: What does the site offer?}
+
+\textit{What does this site offer?}
+
+The \textsc{what} axis is reasonably well served by the primary navigation bar, which lists the main content categories clearly and concisely. Any user with basic internet experience can understand what lies behind labels such as ``TEAMS'', ``NEWS'', and ``STORE''.
+
+The content sections below the hero reinforce the \textsc{what} axis by previewing each major content area. However, the shop is not given prominent enough placement relative to its commercial importance: the ``STORE'' link is in the navigation but visually treated the same as editorial content links.
+
+\subsubsection{WHEN: Is the website up to date?}
+
+\textit{Is this website alive? Is the content recent?}
+
+The \textsc{when} axis is satisfied primarily through the news section, which displays article cards with visible publication dates (Figure~\ref{fig:homepage_news}). The presence of recently published articles signals that the site is actively maintained.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig07_news_dates}
+  \caption{News section showing article cards with publication dates}
+  \label{fig:news_dates}
+\end{figure}
+
+One concern is the hero section, which often features campaign content that may stay the same for weeks. If a returning user sees the same hero image across multiple visits, the contrast with the freshly updated news section below can give the false impression that part of the site is out of date.
+
+\subsubsection{HOW: How does the user get where they want?}
+
+\textit{How do I navigate to what I want?}
+
+The primary navigation mechanism is the top navigation bar, which is sticky, meaning it stays visible as the user scrolls, always providing a way to navigate. This is a strong usability choice.
+
+The game tiles section on the homepage provides a secondary, visual path to team pages, which is a useful design decision: a fan interested in a specific title can navigate there directly without using the navigation bar. The \textsc{how} axis has one notable weakness: the absence of a site-wide search function, discussed in Section~\ref{sec:search}.
+
+% -----------------------------------------------------------
+\subsection{Menu}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig08_navbar}
+  \caption{Primary navigation bar}
+  \label{fig:navbar}
+\end{figure}
+
+The purpose of a menu is to show users all possible destinations within a website, reducing the effort required to move between them. The G2 Esports navigation bar is fixed at the top of the page, correctly placed and immediately visible. The G2 logo on the left works as a conventional home link.
+
+The menu items are written in uppercase, consistent with the brand's bold typography, though this may slightly reduce reading speed compared to title-case labels. Since menu items are short, this is a minor issue.
+
+One potential usability issue concerns the ``TEAMS'' section. When expanded, the dropdown lists esports titles (game names) rather than team names. This requires the user to know which game corresponds to the team they want to follow, which is a natural step for a fan but an extra step for a casual visitor.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\textwidth]{fig09_teams_dropdown}
+  \caption{Teams dropdown showing the game title list}
+  \label{fig:teams_dropdown}
+\end{figure}
+
+% -----------------------------------------------------------
+\subsection{Searching}
+\label{sec:search}
+% -----------------------------------------------------------
+
+A search function is one of the most valuable features a content-rich website can offer. Users who find a search function tend to use it first, since it greatly reduces the effort of browsing through category sections.
+
+The G2 Esports website, at the time of this analysis, does not provide a site-wide search function accessible from the homepage or navigation bar. This is a significant usability gap, given the volume of content available: hundreds of news articles, multiple player profiles, and a growing merchandise catalogue. A user who wants to find a specific player or article must manually browse through category sections.
+
+The absence of search forces every user into a browsing mode even when they have a specific goal, which goes against the principle of minimising user effort. The standard for a search box, when provided, is a text field approximately 30 characters wide, with the search button on the right side.
+
+% -----------------------------------------------------------
+\subsection{F-Shape Scanning}
+% -----------------------------------------------------------
+
+The F-shape pattern describes the natural eye movement that users show when scanning a new webpage. Users make a first horizontal sweep across the top, a second shorter horizontal sweep lower down, then a vertical sweep down the left edge. Information placed at the top and left receives the most attention; lower-right content is frequently ignored.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig10_fshape}
+  \caption{F-shape scanning simulation on the G2 Esports homepage}
+  \label{fig:fshape}
+\end{figure}
+
+Applying this model to the G2 homepage:
+
+\begin{enumerate}[noitemsep]
+  \item \textbf{First horizontal sweep (navigation bar):} The user encounters the G2 logo (WHO), the navigation labels (WHAT and HOW), and any utility elements on the right. Well-optimised.
+  \item \textbf{Second horizontal sweep (hero section):} If the hero is mainly imagery with minimal text, this sweep delivers little useful information. A slogan such as ``BORN TO WIN'' contributes nothing to the six axes. A short, informative subtitle here would significantly improve this area.
+  \item \textbf{Left-side vertical sweep:} As the user moves down the left edge, they encounter news article thumbnails and section titles, the most likely elements to trigger a click.
+\end{enumerate}
+
+The main concern is the hero section's low information density. The highest-attention area on the page is used almost entirely for brand aesthetics.
+
+% -----------------------------------------------------------
+\subsection{Scrolling}
+% -----------------------------------------------------------
+
+Scrolling is a form of user effort. On average, users scroll approximately 1.3 screens before stopping on a page they are unfamiliar with; content beyond the third scroll is seen by a minority of users.
+
+The G2 Esports homepage requires approximately 5--7 vertical scrolls to reach the footer in a full browser window. This is acceptable but more than ideal. The ordering of content is logical: brand impression first (hero), then the most time-sensitive content (news), then structural navigation (game tiles). This order works for both returning users who want news and new users who need orientation.
+
+There is no horizontal scrolling in the full window view, which is correct behaviour. Horizontal scroll is one of the most disruptive problems on desktop sites, as it adds a second navigation direction that users do not expect.
+
+% -----------------------------------------------------------
+\subsection{Text}
+% -----------------------------------------------------------
+
+The text on the G2 Esports homepage is deliberately minimal. The brand style favours imagery, display typography, and short copy over long explanatory paragraphs, which is consistent with research showing that users prefer concise homepage text.
+
+The typeface used throughout is a geometric sans-serif that is easy to read at the sizes used. The main usability concern with the text is contrast: the G2 style frequently places white text over photographic backgrounds, which are not uniformly dark. In areas where the photo is bright or mixed, the contrast between the white text and the background can drop below the WCAG 2.1 AA standard of 4.5:1 for normal-sized text, making the text hard to read for some users. The hero section is the most affected area.
+
+Additionally, the text is not freely resizable via browser zoom without disrupting the page layout, a common limitation of modern CSS-heavy designs that may be a problem for users who rely on larger text sizes.
+
+% -----------------------------------------------------------
+\subsection{Visual Metaphors}
+% -----------------------------------------------------------
+
+Visual metaphors are graphical elements whose meaning users are expected to understand from prior experience. A metaphor works when its meaning is universal; it fails when it is brand-specific or context-specific without any explanation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig11_game_tiles}
+  \caption{Game tile section showing game logo metaphors}
+  \label{fig:game_tiles}
+\end{figure}
+
+The G2 homepage uses two categories of visual metaphors:
+
+\textbf{Standard and well-understood:} social media icons (X/Twitter, Instagram, YouTube, TikTok), the shopping cart icon, and the hamburger menu icon (on smaller viewports). These are universally recognised.
+
+\textbf{Brand- and domain-specific:} the G2 Samurai logo and the game title icons in the teams section. The Samurai motif has no clear connection to gaming that a new user could independently understand.
+
+% -----------------------------------------------------------
+\subsection{Asking for Personal Data}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig12_cookie_banner}
+  \caption{Cookie consent banner on first visit}
+  \label{fig:cookie}
+\end{figure}
+
+In compliance with GDPR rules applicable to European users, the G2 Esports website shows a cookie consent banner on the user's first visit. All consent banners are, by nature, a usability interruption: they cover page content, distract from the user's goal, and take up part of the user's limited time.
+
+The key usability criteria for a consent banner are: (1) it can be dismissed quickly, within one or two clicks; (2) the accept and reject options are equally prominent; (3) it does not block primary navigation. The G2 banner satisfies criterion 1. Criterion 2 is a common failure point: the ``Accept All'' button is typically styled prominently with the brand colour, while ``Reject All'' or ``Manage Preferences'' is shown as a lower-contrast text link, an unequal design that nudges users towards acceptance and sits in a grey area under GDPR.
+
+Beyond the cookie banner, the site encourages users to create an account to access loyalty features and purchase history. This is presented as a user choice rather than a requirement to access content, which is the correct approach.
+
+% ============================================================
+\newpage
+\section{Internal Page Analysis}
+\label{sec:internal}
+% ============================================================
+
+\subsection{Introduction: Deep Linking}
+
+Deep linking describes the case where a user arrives directly at an internal page (via a search engine result, a social media post, or an external link) without having passed through the homepage. This is increasingly the most common way to access content-rich websites: the majority of sessions now begin on an internal page.
+
+When a user arrives via deep linking they lack the context provided by the homepage. For this reason, every internal page must independently answer at least the three \textbf{mandatory} informative axes:
+
+\begin{itemize}[noitemsep]
+  \item \textbf{WHERE:} the user's position in the site structure, typically communicated by a breadcrumb navigation.
+  \item \textbf{WHO:} the identity of the site's owner, consistently provided by the logo in the navigation bar.
+  \item \textbf{WHAT:} the topic and content of the current page.
+\end{itemize}
+
+The \textbf{optional} axes (\textsc{why}, \textsc{when}, and \textsc{how}) are desirable but not strictly required for every internal page type. The following sections analyse three representative internal page types.
+
+% -----------------------------------------------------------
+\subsection{Team / Roster Page}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig13_team_page}
+  \caption{G2 Esports League of Legends team page, overview}
+  \label{fig:team_page}
+\end{figure}
+
+The team page is one of the most important internal page types on the site, as it is the main destination for fans who want to follow a specific G2 team.
+
+\subsubsection{Mandatory Informative Axes}
+
+\textbf{WHERE:} The persistent navigation bar provides the WHO axis, but a dedicated breadcrumb trail (e.g.\ ``Home $>$ Teams $>$ League of Legends'') is not consistently present. Without a breadcrumb, a user arriving via deep linking must guess their position from the page title and navigation context, which is easy for a fan but less clear for a casual visitor.
+
+\textbf{WHO:} Consistently satisfied by the G2 logo in the navigation bar.
+
+\textbf{WHAT:} The page title and the roster section immediately below satisfy the \textsc{what} axis effectively.
+
+\subsubsection{Optional Informative Axes}
+
+\textbf{WHEN:} Partially satisfied. The current roster is displayed, but there is typically no explicit ``roster last updated'' timestamp. In a sport where team compositions change frequently, the absence of a date raises a legitimate question about whether the information is current.
+
+\textbf{HOW:} Partially addressed. A widget showing upcoming matches or latest results, if present, gives users a way to follow the team further. If absent, the page works as a static information card rather than a dynamic fan engagement hub.
+
+\subsubsection{Structure and Functionalities}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig14_roster_cards}
+  \caption{Roster section, player cards}
+  \label{fig:roster_cards}
+\end{figure}
+
+The roster is presented as a grid of player cards, each containing only a portrait photograph, this is not a well-designed card structure that balances visual appeal with practical information.
+
+Player cards link to individual player profile pages. The usability value of these links depends entirely on whether the profile pages contain enough content (statistics, biography, career history). If the individual pages are sparse, the link creates an expectation it does not fulfil, which is a common design mistake in sports websites.
+
+\subsubsection{Visual Metaphors}
+
+The team page uses game-specific visual language: position icons, in-game role labels, and game UI elements incorporated into the design. For a fan of the specific game, these are immediately meaningful. Role labels such as ``Top Laner'', ``ADC'', or ``Jungler'' are specialist terms that require prior knowledge. The site makes no attempt to explain these terms, which is consistent with the general assumption that the target audience already knows the games.
+
+% -----------------------------------------------------------
+\subsection{Shop / Product Page}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig15_shop_listing}
+  \caption{G2 Shop, product listing page}
+  \label{fig:shop_listing}
+\end{figure}
+
+The shop section is the most complex internal area of the site, combining brand content with a complete e-commerce flow.
+
+\subsubsection{Mandatory Informative Axes}
+
+\textbf{WHERE:} The shop section has a clearly highlighted ``STORE'' label in the navigation bar when active. However, breadcrumbs are not consistently present across all product listing and product pages, so the user's exact position in the shop hierarchy is not always clear. This is a problem in a multi-level e-commerce section where users can easily get lost.
+
+\textbf{WHO:} Consistently satisfied by the navigation bar logo.
+
+\textbf{WHAT:} Individual product pages clearly display the product name, price, available variants (size, colour), and imagery, satisfying the \textsc{what} axis effectively.
+
+\subsubsection{Optional Informative Axes}
+
+\textbf{WHEN:} Stock availability indicators (``In Stock'', ``Sold Out'', ``Pre-order, Ships [date]'') provide a \textsc{when} signal relevant to the e-commerce context. When absent, users must proceed to checkout to discover availability, which is a significant point of frustration.
+
+\textbf{WHY:} The product description, when well-written, serves a \textsc{why} function. On the G2 shop, descriptions tend to be brief, which satisfies the principle of concision but may leave sales potential unrealised.
+
+\subsubsection{Structure and Functionalities}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig16_product_page}
+  \caption{G2 Shop, individual product page}
+  \label{fig:product_page}
+\end{figure}
+
+The product page layout follows standard e-commerce conventions: a product image gallery on the left, product details and purchase options on the right. This two-column layout matches users' expectations of online shopping and reduces effort. The size selector should indicate out-of-stock variants before the user starts the checkout process: discovering unavailability only mid-checkout is a well-documented source of e-commerce frustration. Related product suggestions at the bottom of the product page serve both commercial and navigational purposes.
+
+\subsubsection{Visual Metaphors}
+
+The shop uses standard e-commerce visual metaphors: the shopping cart icon, the padlock icon for secure checkout, and size guide links. These are universally understood. The G2 brand elements are maintained throughout the shop, reinforcing brand consistency and ensuring users feel they remain within the G2 website.
+
+% -----------------------------------------------------------
+\subsection{News / Article Page}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig17_article_page}
+  \caption{G2 Esports, news article page}
+  \label{fig:article_page}
+\end{figure}
+
+News article pages are among the most likely pages to receive direct traffic, as individual articles are frequently shared on social media and linked from external sources.
+
+\subsubsection{Mandatory Informative Axes}
+
+\textbf{WHERE:} News article pages have no breadcrumb. A user arriving via a social media link has no way to understand where this article sits within the site structure, or even that it belongs to the official G2 site rather than an independent esports news outlet. This is a significant failure for a page type that mostly receives direct traffic.
+
+\textbf{WHO:} Satisfied by the navigation bar logo.
+
+\textbf{WHAT:} The article headline and hero image satisfy the \textsc{what} axis immediately. A well-written headline must communicate the topic without requiring the user to read the body.
+
+\subsubsection{Optional Informative Axes}
+
+\textbf{WHEN:} The publication date must be displayed prominently, near the headline and not buried somewhere inside the article. The timeliness of news is fundamental to its value, and this is a required \textsc{when} element for news pages.
+
+\textbf{WHY} and \textbf{HOW:} Related article links or ``read more'' sections at the end of articles address these axes and are a standard, effective pattern for increasing how much of the site users read.
+
+\subsubsection{Structure and Functionalities}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig18_article_body}
+  \caption{Article page, body structure}
+  \label{fig:article_body}
+\end{figure}
+
+The article body should follow standard web reading conventions: a single-column text layout at a comfortable reading width (approximately 65--75 characters per line), with adequate line spacing and paragraph breaks. Social sharing buttons are appropriate on esports articles given the social-first distribution strategy of this type of content; their placement alongside or at the end of the article (not as floating overlays that interrupt reading) affects user experience.
+
+The absence of a comprehensive tag and category system can make the article page a dead end. Without tags (e.g.\ ``\#Valorant'', ``\#Roster'', ``\#Tournament''), users who arrive via direct links have no clear path to related content within the site.
+
+% -----------------------------------------------------------
+\subsection{Handle of 404 Error}
+% -----------------------------------------------------------
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig19_404_page}
+  \caption{G2 Esports, 404 error page}
+  \label{fig:404}
+\end{figure}
+
+The 404 error page is shown when a user navigates to a URL that does not exist within the site, by mistyping a URL, following a broken external link, or trying to access content that has been removed. A user who reaches a dead end is at high risk of leaving the site entirely.
+
+A well-designed 404 page must: acknowledge the error clearly; keep the visual identity of the site so the user knows they are still on the G2 website; and provide at least one clear way to recover (a link to the homepage, a search bar, or links to popular sections).
+
+The G2 Esports 404 page takes a light-hearted approach: it announces the page does not exist and provides a clear ``Continue Shopping'' button. This is only partially effective given that not all users navigate the website for the purpose of shopping. All in all the key usability requirement, whether the user can exit the 404 state with a single click, is satisfied.
+
+% ============================================================
+\newpage
+\section{Overall Analysis}
+% ============================================================
+
+\subsection{Layout and Structure}
+
+The G2 Esports website uses a single-column, full-width layout on all pages, which is standard for modern brand websites where visual impact is the main design priority. The layout is consistent across all page types: navigation bar at the top, main content in the centre, footer at the bottom. This consistency is a usability strength: users who have navigated one section can immediately find their way in any other section. The persistent sticky navigation bar is a particularly good implementation of this principle.
+
+\subsection{Scroll}
+
+The overall scroll economy of the site is acceptable. The homepage is longer than ideal, but the section ordering is logical. Internal pages are generally more focused and require fewer scrolls. The persistent navigation bar ensures users never lose access to the main navigation regardless of how far they scroll. A scroll-to-top button on long pages would be a useful addition.
+
+\subsection{Search}
+
+The absence of a site-wide search function is the most concrete single usability failure on the G2 Esports website. The site contains a large volume of content across different categories, and browsing through category sections is a poor substitute for a direct search. The recommendation is clear: implement a unified site-wide search accessible from the persistent navigation bar, covering at minimum news articles, player names, and game/team sections, with shop products optionally included.
+
+\subsection{Not Found Pages}
+
+Two cases beyond the standard 404 are worth noting. First, \textbf{empty search results} (if a search function is implemented): the page must confirm that no results were found, offer spelling suggestions, and provide navigation options rather than a dead end. Second, \textbf{out-of-stock products}: a product page for an item that cannot be purchased, without clearly showing its unavailability, is a common source of user frustration in e-commerce. Stock status should be visible at the product listing level, before the user invests time in the product page.
+
+% ============================================================
+\newpage
+\section{Final Evaluation}
+% ============================================================
+
+The G2 Esports website works well for its main audience, which is fans who already know the brand. The design is clean, the navigation is clear, and the pages are generally well organised.
+
+The problem is that the same choices that make the site look good are the ones that make it less usable. Putting visual impact first means that basic information gets pushed aside, and new users are left without clear answers to the \textsc{who} and \textsc{why} axes. The site basically assumes everyone already knows and loves G2, which is a risky bet.
+
+The absence of a site-wide search function is the biggest single usability problem. For a site with this amount of content, search is not optional; it is a basic requirement.
+
+The following table gives a grade from 1 to 10 for each analysed area. The homepage counts double since it is the most important page of the site.
+
+\begin{table}[H]
+  \centering
+  \begin{tabularx}{\textwidth}{clXXc}
+    \toprule
+    \textbf{\#} & \textbf{Area} & \textbf{Strengths} & \textbf{Weaknesses} & \textbf{Grade} \\
+    \midrule
+    1 & Domain \& SERP
+      & Branded search works; \texttt{.com}
+      & ``G2'' is too generic; invisible outside the fanbase
+      & 5/10 \\
+    2 & Homepage axes
+      & WHAT and HOW covered by the navbar
+      & WHO and WHY completely ignored for new users
+      & 5/10 \\
+    3 & Homepage structure
+      & Consistent layout; sticky navbar
+      & Hero is pure decoration; wastes the most-viewed area of the page
+      & 6/10 \\
+    4 & Search
+      & (none)
+      & No search at all, on a site with hundreds of pages
+      & 0/10 \\
+    5 & Menu
+      & Labels are clear; always visible
+      & Requires knowing game titles to navigate; useless for new visitors
+      & 6/10 \\
+    6 & Text \& contrast
+      & Copy is short and to the point
+      & White text on photographic backgrounds can fail WCAG contrast where the image is bright
+      & 5/10 \\
+    7 & Visual metaphors
+      & Common icons used correctly
+      & Logos and game roles are meaningless to anyone outside the fanbase
+      & 5/10 \\
+    8 & Team pages
+      & Coincise roster cards; match widget when present
+      & No timestamps, no live data; feels like a static brochure
+      & 5/10 \\
+    9 & Shop
+      & Follows standard e-commerce layout
+      & Stock status hidden until checkout; breadcrumbs missing or inconsistent
+      & 5/10 \\
+    10 & News articles
+      & headlines clear
+      & No breadcrumb at all; no tags; articles are dead ends
+      & 4/10 \\
+    11 & 404 page
+      & On-brand; one-click recovery
+      & (none)
+      & 8/10 \\
+    \midrule
+    \multicolumn{4}{r}{\textbf{Final grade}} & \textbf{4.5/10} \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Summary evaluation table}
+  \label{tab:final}
+\end{table}
+
+\textbf{Overall:} G2 Esports is a website that works well for its existing fans but has real problems for anyone else. The visual design is good, but the lack of search, the missing breadcrumbs in the shop and news sections, the missing context for new users, and the static internal pages bring the score down significantly. The most important improvements would be adding a site-wide search function and consistent breadcrumb navigation across all internal pages.
+
+% ============================================================
+\end{document}
