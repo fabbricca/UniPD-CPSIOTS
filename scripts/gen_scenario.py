@@ -1,23 +1,8 @@
 #!/usr/bin/env python3
-"""Generate a headless Cooja scenario (.csc) and its ground-truth file.
+"""Generate a Cooja scenario (.csc) and its attacker ground-truth file.
 
-Topology follows the paper's Fig. 6: the root (id 1) sits top-centre and the
-other nodes fill a grid of `cols` columns below it with `spacing` metres
-between neighbours. Attacker ids are chosen deterministically from `seed`
-(overridable with --attacker-ids), so the same seed gives the same topology
-and the same attacker placement across detector modes.
-
-The generator writes <out>.truth.csv listing attacker ids, type and rate. The
-analysis joins IDS alerts against this file and never infers ground truth from
-IDS output.
-
-Examples:
-  gen_scenario.py --nodes 10 --spacing 30 --seed 1 --out simulations/dev-10-baseline-s1.csc
-  gen_scenario.py --nodes 10 --attack neighbor --attackers 1 --attack-period-ms 5000 \
-      --seed 1 --out simulations/dev-10-neighbor-a1-s1.csc
-  gen_scenario.py --nodes 30 --attack dis --attackers 20% --seed 3 \
-      --out simulations/final-30-dis-a20-s3.csc
-"""
+Nodes are placed on the paper's grid; attackers are chosen from the seed.
+Run with --help for the full option list."""
 import argparse
 import pathlib
 import random

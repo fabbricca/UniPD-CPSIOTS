@@ -1,11 +1,4 @@
-/*
- * rpl-ids-root.c - DODAG root and UDP sink. Runs no detector: the paper's
- * IDS is distributed on the normal nodes; the root only collects traffic.
- *
- * Records (tab separated, Cooja prepends time and mote id):
- *   RX   <from_id> <seq>                         UDP datagram received
- *   RSTAT <rx_total> <rpl_nbrs> <routes>         periodic root status
- */
+/* DODAG root and UDP sink. Runs no detector: the IDS is distributed. */
 #include "contiki.h"
 #include "net/routing/routing.h"
 #include "net/netstack.h"

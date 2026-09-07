@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Parse a Cooja run log (time<TAB>mote<TAB>msg) into tidy CSV tables.
-
-Record tags emitted by the firmware (see include/ids.h):
-  EV, NBR, WIN, PAR (ids.c)   TX, STAT (node)   RX, RSTAT (root)
-Lines without a known tag (Contiki log module output) are ignored.
-
-Usage: parse_logs.py logs/<run>.log [--out results/] [--summary]
-Writes results/<run>.<table>.csv and, with --summary, prints a human check:
-join times, per-window DIO/DIS distribution, PDR.
-"""
+"""Parse a Cooja run log into tidy CSV tables, one per record type."""
 import argparse
 import pathlib
 import sys

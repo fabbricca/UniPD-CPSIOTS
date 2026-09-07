@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Aggregate results/matrix.csv into a per-configuration summary.
-
-Groups rows by (nodes, attack, attackers, mode, window) and reports the mean,
-min, max and standard deviation across seeds for the node-level TPR/FPR and
-detection latency, in the layout of the paper's Table III. Writes
-results/summary.csv and prints a readable table.
-
-Usage: aggregate.py [results/matrix.csv] [--out results/summary.csv]
-"""
+"""Aggregate results/matrix.csv into a per-configuration summary."""
 import argparse
 import pathlib
 

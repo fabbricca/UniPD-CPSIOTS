@@ -1,12 +1,5 @@
-/*
- * neighbor-attacker.c - RPL neighbour attack.
- *
- * The paper's neighbour attacker rebroadcasts DIO messages to its neighbours,
- * inflating the DIO count they attribute to it. rpl-lite exposes
- * rpl_icmp6_dio_output(NULL), which emits one multicast DIO; calling it on a
- * timer is the operational equivalent and is what the detector must catch.
- * The node otherwise behaves normally (joins RPL, sends CBR UDP).
- */
+/* Neighbour attack: floods multicast DIOs on a timer while behaving
+ * otherwise normally (joins RPL, sends CBR UDP). */
 #include "attacker-common.h"
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/routing/rpl-lite/rpl-icmp6.h"

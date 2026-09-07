@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate include/ids-k-table.h from the paper's polynomial (see ids_model)."""
+"""Generate include/ids-k-table.h from the paper's polynomial for k."""
 import pathlib
 import sys
 

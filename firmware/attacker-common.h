@@ -1,21 +1,6 @@
-/*
- * attacker-common.h - shared attack scheduling for the neighbour and DIS
- * attackers. An attacker is a normal RPL node (joins the DODAG, sends CBR UDP
- * so it looks operational) plus a timer that emits extra RPL control messages
- * between ATTACK_START_SEC and ATTACK_START_SEC + ATTACK_DURATION_SEC.
- *
- * Ground-truth records (Cooja prepends "<time_us>\t<mote_id>\t"):
- *   ATK  start <type> <period_ms>          attack window begins
- *   ATK  send  <type> <seq>                one injected control message
- *   ATK  stop  <type> <sent>               attack window ends, total injected
- * The host analysis derives ground truth from these and the scenario's
- * .truth.csv, never from IDS output.
- *
- * Build parameters (firmware/Makefile pass-through):
- *   ATTACK_START_SEC     default 75  (paper: attack starts 75 s in)
- *   ATTACK_DURATION_SEC  default 600 (10 min); 0 = until end of run
- *   ATTACK_PERIOD_MS     fixed inter-message period; 0 = random 5-60 s (DIS)
- */
+/* Shared attack scheduling. An attacker is a normal node plus a timer that
+ * injects control messages between ATTACK_START_SEC and +ATTACK_DURATION_SEC.
+ * ATTACK_PERIOD_MS = 0 selects the paper's random 5-60 s interval. */
 #ifndef ATTACKER_COMMON_H_
 #define ATTACKER_COMMON_H_
 

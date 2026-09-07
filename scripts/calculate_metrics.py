@@ -1,30 +1,7 @@
 #!/usr/bin/env python3
-"""Detection metrics for one run, joined against its ground-truth file.
+"""Detection and network metrics for one run, joined against its ground truth.
 
-Two aggregations are reported. Ground truth (attacker ids, type, interval)
-comes only from the .truth.csv written by gen_scenario.py, never from IDS
-output. A DIO alert scores against a neighbour attacker, a DIS alert against a
-DIS attacker; the wrong kind for the attacker type is not a true positive.
-Only windows active during the attack are scored (window end within
-[start+win, atk_end+win], so the first scored window fully contains attack
-traffic).
-
-Node-level (primary, comparable with the paper's Table III): each node the
-network can hear is classified once. An attacker is TP if at least one monitor
-raised the correct-kind alert in an active window, else FN. A normal node is
-FP if any monitor raised the attack's own rule on it in an active window (a
-DIO alert for a neighbour attack, a DIS alert for a DIS attack), else TN, so
-the columns line up with the paper's per-attack FPR. This matches the
-paper's per-node samples and its "TPR 100%, FPR 0%" for the DIS attack.
-
-Decision-level (secondary, PROJECT_PLAN section 10): one decision by one
-monitor about one neighbour at one window end. Finer grained; exposes the
-single-attacker blind spots (a monitor with 5-7 or 28-32 neighbours cannot
-flag a lone attacker regardless of rate).
-
-Usage: calculate_metrics.py logs/<run>.log [--truth simulations/<run>.truth.csv]
-                            [--json results/<run>.metrics.json]
-"""
+Reports node-level (paper-comparable) and decision-level figures."""
 import argparse
 import json
 import pathlib

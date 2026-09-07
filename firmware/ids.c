@@ -1,19 +1,5 @@
-/*
- * ids.c - distributed anomaly IDS for RPL neighbour and DIS attacks.
- * See include/ids.h for the algorithm summary and the log record formats.
- *
- * Two detector modes share the same profile and alert code (detect_over()):
- *   PAPER    (default) one fixed IDS_WINDOW_SEC window; counters reset at its
- *            end. Reproduces Farzaneh et al.
- *   SLIDING  a ring of IDS_SLIDE_BUCKETS buckets of IDS_SLIDE_BUCKET_SEC each
- *            (default 6 x 10 s = 60 s), advanced every bucket; detection runs
- *            on the rolling sum every bucket, so latency is one bucket, not one
- *            window. Original contribution.
- *
- * The neighbour table is independent of RPL's: the paper's monitor counts
- * DIOs from every node it hears. Entries are keyed by the 16-bit node id from
- * the sender's IPv6 address, which under Cooja equals the mote id.
- */
+/* Detector core: counts RPL control messages per neighbour, applies the
+ * paper's threshold at each evaluation, and blocks offenders. */
 #include "ids.h"
 #include "ids-k-table.h"
 #include "net/routing/rpl-lite/rpl-neighbor.h"

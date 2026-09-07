@@ -1,12 +1,5 @@
-/*
- * dis-attacker.c - RPL DIS attack.
- *
- * The attacker floods multicast DIS messages; each one makes receivers reset
- * their Trickle timer and re-emit DIOs, and inflates the DIS count the
- * detector attributes to the attacker. rpl-lite exposes
- * rpl_icmp6_dis_output(NULL) for a multicast DIS. Paper default: random
- * 5..60 s; faster fixed rates are set via ATTACK_PERIOD_MS.
- */
+/* DIS attack: floods multicast DIS messages, each of which resets the
+ * receivers' Trickle timers and provokes fresh DIOs. */
 #include "attacker-common.h"
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/routing/rpl-lite/rpl-icmp6.h"

@@ -1,25 +1,7 @@
 #!/usr/bin/env python3
-"""Generate, run and score a matrix of scenarios, one metrics row per run.
+"""Generate, run and score a matrix of scenarios; one metrics row per run.
 
-A matrix is a list of scenario templates; each is expanded over a seed list
-and, optionally, over detector modes. For every expanded run this driver:
-  1. calls gen_scenario.py to write the .csc and .truth.csv,
-  2. runs it headless via run_scenario.sh,
-  3. parses the log and computes metrics with calculate_metrics.py,
-  4. appends one row (config fields + metrics) to results/matrix.csv and writes
-     results/<name>.metrics.json.
-Runs are skipped when the metrics JSON already exists unless --force is given,
-so an interrupted matrix resumes cheaply.
-
-Presets (see PRESETS): "dev" (fast, 10-node, 3 seeds), "paper" (the plan's
-final matrix, 20/30/40 nodes, 5 seeds). Select rows with --preset or point at
-a JSON matrix file with --matrix.
-
-Usage:
-  run_matrix.py --preset dev
-  run_matrix.py --preset dev --modes paper sliding
-  run_matrix.py --matrix my.json --seeds 1 2 3 4 5
-"""
+Resumable: metrics are recomputed from existing logs unless --force."""
 import argparse
 import csv
 import json

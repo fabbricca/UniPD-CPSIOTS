@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""Reference model of the detector arithmetic in firmware/ids.c.
-
-Every operation mirrors the C integer code exactly (same scaling, same
-truncation points), so the tests can assert bit-for-bit agreement between
-firmware ALERT/DET records and this model. Floating point is used only in
-k_polynomial(), which is the paper's equation (2) and is what the table is
-generated from.
-"""
+"""Bit-exact Python twin of the detector arithmetic in firmware/ids.c."""
 import math
 
 K_TABLE_MAX = 40          # table index is min(neighbours, K_TABLE_MAX)

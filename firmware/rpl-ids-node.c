@@ -1,11 +1,4 @@
-/*
- * rpl-ids-node.c - normal sensor node: RPL router, CBR UDP client toward the
- * root, local IDS monitor.
- *
- * Records (tab separated, Cooja prepends time and mote id):
- *   TX   <seq>                                  UDP datagram sent to the root
- *   STAT <rank> <parent_id> <parent_changes> <tx> <rpl_nbrs> <ids_nbrs>
- */
+/* Normal node: RPL router, CBR UDP client toward the root, IDS monitor. */
 #include "contiki.h"
 #include "net/routing/routing.h"
 #include "net/netstack.h"

@@ -1,31 +1,6 @@
-/*
- * ids.h - lightweight distributed anomaly IDS for RPL (Farzaneh et al. 2019)
- *
- * Every normal node monitors the RPL control traffic it hears from each
- * neighbour. At the end of every observation window it builds the normal
- * profile (mean and standard deviation of per-neighbour DIO counts), derives
- * the dynamic threshold mean + k*sigma with k from the paper's polynomial
- * (include/ids-k-table.h), flags neighbours above it (neighbour attack) or
- * above the fixed DIS threshold (DIS attack), and blocks them: temporarily
- * for IDS_TEMP_BLOCK_SEC while block_count < IDS_BLOCK_THRESHOLD, then
- * permanently. Blocking drops the neighbour's DIS/DIO in the rpl-icmp6.c hook
- * before RPL sees them. Counting continues while blocked so the paper's
- * repeated-detection escalation works.
- *
- * All arithmetic is integer, scaled by 1000 ("x1000" fields).
- *
- * Log record formats (tab separated, printed with printf; Cooja's control
- * script prepends "<time_us>\t<mote_id>\t"):
- *   IDS   init window=W dis_thr=D block_thr=B temp_block=T warmup=U mode=M
- *   EV    <DIO|DIS> <nbr_id>                          one per received message
- *   NBR   <win> <nbr_id> <dio> <dis> <dropped> <bstate>   per neighbour at window end
- *                                                   bstate: 0 none, 1 temp, 2 permanent
- *   DET   <win> <n> <mean_x1000> <sigma_x1000> <k_x1000> <thr_x1000>   window profile
- *   ALERT <win> <nbr_id> <DIO|DIS> <count> <thr_x1000>
- *   BLOCK <nbr_id> <temp|perm|expire> <block_count> <duration_s>
- *   PAR   <old_id> <new_id> <changes>                 preferred-parent switch
- *   WIN   <win> <n_heard> <n_rpl> <dio_sum> <dis_sum>  window summary
- */
+/* Distributed anomaly IDS for RPL (Farzaneh et al., ICWR 2019).
+ * Per-neighbour DIO/DIS counters, threshold mean+k*sigma, temporary and
+ * permanent blocking. Log record formats are documented in the report. */
 #ifndef IDS_H_
 #define IDS_H_
 

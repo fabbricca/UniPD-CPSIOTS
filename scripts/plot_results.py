@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""Produce the figures required by PROJECT_PLAN section 10.
-
-Two groups:
-  per-run   from one run log: DIO/DIS counts over time, threshold vs observed
-            count for the attacker's monitor, alerts on the timeline.
-  matrix    from results/matrix.csv: TPR and FPR by network size, detection
-            latency by attack rate, PDR baseline vs attack.
-
-Usage:
-  plot_results.py run  logs/<run>.log [--truth ...] [--outdir report/figures]
-  plot_results.py matrix [results/matrix.csv] [--outdir report/figures]
-  plot_results.py topology simulations/<scenario>.csc [--outdir report/figures]
-"""
+"""Produce the report figures from a run log or from results/matrix.csv."""
 import argparse
 import pathlib
 import sys

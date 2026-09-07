@@ -2,7 +2,7 @@
 %  A Lightweight Distributed Anomaly-Based IDS for RPL Networks
 %  CPS and IoT Security, UniPD Master CS
 % ============================================================
-\documentclass[12pt, a4paper]{article}
+\documentclass[11pt, a4paper]{article}
 
 % --- Encoding & language ------------------------------------
 \usepackage[T1]{fontenc}
@@ -10,16 +10,13 @@
 \usepackage[english]{babel}
 
 % --- Page geometry ------------------------------------------
-\usepackage[
-  top=2.5cm, bottom=2.5cm,
-  left=3cm,  right=3cm
-]{geometry}
+\usepackage[top=2.2cm, bottom=2.2cm, left=2.4cm, right=2.4cm]{geometry}
 
 % --- Typography ---------------------------------------------
 \usepackage{microtype}
 \usepackage{lmodern}
 \usepackage{setspace}
-\onehalfspacing
+\setstretch{1.05}
 
 % --- Headers & footers --------------------------------------
 \usepackage{fancyhdr}
@@ -31,54 +28,59 @@
 \fancyfoot[C]{\small \thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
-% --- Section formatting (mirrors reference papers) ----------
+% --- Section formatting -------------------------------------
 \usepackage{titlesec}
 \titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
-\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+\titlespacing*{\section}{0pt}{1.6ex plus 0.3ex}{0.9ex}
+\titlespacing*{\subsection}{0pt}{1.3ex plus 0.2ex}{0.6ex}
 
-% --- Graphics -----------------------------------------------
+% --- Graphics, captions, tables -----------------------------
 \usepackage{graphicx}
 \usepackage{float}
-% All figures live in the img/ subfolder.
 \graphicspath{{img/}}
-
-% --- Captions -----------------------------------------------
 \usepackage{caption}
-\captionsetup{font=small, labelfont=bf, justification=centering}
-
-% --- Tables -------------------------------------------------
+\captionsetup{font=small, labelfont=bf, justification=centering,
+              skip=4pt, belowskip=2pt}
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{tabularx}
-
-% --- Maths --------------------------------------------------
 \usepackage{amsmath}
+\usepackage{listings}
+
+% --- Code listings ------------------------------------------
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries,
+  commentstyle=\itshape,
+  language=C,
+  showstringspaces=false,
+  columns=fullflexible,
+  frame=single,
+  framesep=3pt,
+  xleftmargin=2pt,
+  aboveskip=6pt,
+  belowskip=4pt
+}
 
 % --- Hyperlinks ---------------------------------------------
-\usepackage[
-  colorlinks=true,
-  linkcolor=black,
-  urlcolor=blue,
-  citecolor=black
-]{hyperref}
+\usepackage[colorlinks=true, linkcolor=black, urlcolor=blue, citecolor=black]{hyperref}
 
 % --- Miscellaneous ------------------------------------------
-\usepackage{parskip}        % space between paragraphs instead of indent
-\usepackage{enumitem}       % fine-grained list control
+\usepackage{parskip}
+\setlength{\parskip}{0.6ex plus 0.1ex}
+\usepackage{enumitem}
+\setlist{noitemsep, topsep=2pt, leftmargin=*}
 \usepackage{xcolor}
 \usepackage{csquotes}
 
-% ============================================================
-%  DOCUMENT
 % ============================================================
 \begin{document}
 
 % ---- Title page --------------------------------------------
 \begin{titlepage}
   \centering
-
-  \includegraphics[width=0.35\textwidth]{unipd_logo}
+  \includegraphics[width=0.32\textwidth]{unipd_logo}
 
   \vspace{0.4cm}
   {\large\scshape Università degli Studi di Padova}\\[0.1cm]
@@ -86,13 +88,18 @@
   {\normalsize Master's Degree in Computer Science}\\[0.1cm]
   {\normalsize Academic year 2025/2026}
 
-  \vspace{1.2cm}
+  \vspace{1.1cm}
   \rule{\linewidth}{0.5pt}\\[0.3cm]
   {\LARGE\bfseries CPS and IoT Security}\\[0.4cm]
-  {\large A lightweight distributed anomaly-based}\\[0.3cm]
-  {\large Intrusion Detection System for}\\[0.3cm]
+  {\large A lightweight distributed anomaly-based}\\[0.25cm]
+  {\large Intrusion Detection System for}\\[0.25cm]
   {\large RPL networks in Contiki-NG and Cooja}\\[0.2cm]
   \rule{\linewidth}{0.5pt}
+
+  \vspace{0.9cm}
+  {\small Reference paper: B. Farzaneh, M. A. Montazeri, S. Jamali,\\
+  \textit{An Anomaly-Based IDS for Detecting Attacks in RPL-Based\\
+  Internet of Things}, ICWR 2019}
 
   \vfill
   {\normalsize Author: \textbf{Riccardo Fabbian}}\\[0.2cm]
@@ -100,410 +107,144 @@
   {\normalsize Period of work: \textbf{September 2026}}
 \end{titlepage}
 
-% ---- Table of contents -------------------------------------
-\newpage
-\tableofcontents
-
-% ---- List of figures ---------------------------------------
-\newpage
-\listoffigures
-
 % ============================================================
-\newpage
-\section{Introduction}
+\section{Introduction and Objective}
 % ============================================================
 
-The Internet of Things connects a very large number of small devices that run on batteries, carry a few kilobytes of memory, and talk to each other over short-range radio. Networks of this kind are called Low-Power and Lossy Networks, and they cannot use the routing protocols of the ordinary internet: those protocols assume plentiful memory, stable links, and a power socket. For this reason the IETF standardised a dedicated routing protocol for them, RPL, described in RFC 6550.
+RPL (RFC 6550) is the routing protocol for Low-Power and Lossy Networks. Its security problem is that encryption protects a network from outsiders but not from a node that has already joined: such a node holds valid keys, so every message it sends is legitimate and cryptography cannot distinguish it from an honest one. The only remaining defence is to observe behaviour, which is what the reference paper does.
 
-\begin{displayquote}
-\textit{``In RPL, encryption and authentication methods can only protect networks from external attack and cannot protect networks against internal attack.''}
-\end{displayquote}
+The paper detects two internal attacks specific to RPL, the \textbf{neighbour attack} and the \textbf{DIS attack}, using a threshold on the number of control messages each node hears from each of its neighbours. Its appeal is that it is genuinely lightweight and fully distributed: no central monitor, no reporting traffic. The authors report a True Positive Rate (TPR) of 100\% with 0\% False Positive Rate (FPR) for the DIS attack, and 94--100\% TPR for the neighbour attack.
 
-This sentence, taken from the reference paper of this project, is the reason the work exists. A device that has legitimately joined an RPL network already holds the network key. Everything it sends is valid, correctly encrypted, and impossible to distinguish from honest traffic by cryptographic means alone. If such a device decides to misbehave, the only remaining defence is to watch how it behaves and notice that its behaviour is abnormal. That is the job of an Intrusion Detection System, and it is what this project builds, reproduces, and evaluates.
-
-% -----------------------------------------------------------
-\subsection{The Reference Paper}
-% -----------------------------------------------------------
-
-The project reproduces the model proposed by B. Farzaneh, M. A. Montazeri and S. Jamali in \textit{An Anomaly-Based IDS for Detecting Attacks in RPL-Based Internet of Things}, presented at the 5th International Conference on Web Research (ICWR) in 2019.
-
-The paper proposes a detection method for two internal attacks specific to RPL, the neighbour attack and the DIS attack. Its main quality is that it is genuinely lightweight: the detector is a handful of counters and one threshold formula, it runs on every ordinary node, and it needs no central monitor and no reporting traffic. The authors report a True Positive Rate of 100\% for the DIS attack with a False Positive Rate of 0\%, and between 94\% and 100\% for the neighbour attack, on networks of 20, 30 and 40 nodes.
-
-% -----------------------------------------------------------
-\subsection{Objective}
-% -----------------------------------------------------------
-
-The work has two parts. The first is a reproduction: implement the paper's detector and its two attacks on a current software stack, run the same experimental matrix, and check whether the reported results still hold. The second is an original contribution: the paper evaluates its counters once every five minutes, which means an attack starting just after an evaluation goes unnoticed for almost the whole window. This project therefore adds a second detector mode that uses a shorter, sliding observation window, and measures what is gained and what is lost.
-
-The reproduction is not a straight port. The paper used Contiki 2.7, a version now more than a decade old; this project uses Contiki-NG v5.2, in which the MAC layer used by the authors no longer exists and the routing layer has been rewritten. Every difference that this forced is documented and, where it affects the results, discussed.
-
-% -----------------------------------------------------------
-\subsection{Reproducibility}
-% -----------------------------------------------------------
-
-The whole environment is pinned inside a Docker image: a fixed Contiki-NG commit, a fixed compiler, and a prebuilt simulator. Every scenario is generated from a random seed by a script rather than edited by hand, and the simulator is deterministic for a given seed. Running the same scenario twice produced byte-identical logs, so any variation reported in this document comes from changing the seed and not from run-to-run noise. All figures and tables in the results section are regenerated from the raw logs by the analysis scripts.
+This project has two objectives. The first is to \textbf{reproduce} the detector and both attacks on Contiki-NG v5.2 with Cooja, and to run the paper's experimental matrix. The second is an \textbf{original extension}: the paper evaluates its counters once every five minutes, so an attack starting just after an evaluation goes unnoticed for almost a whole window. A second detector mode with a shorter sliding window was implemented to measure what faster detection costs.
 
 % ============================================================
-\newpage
-\section{Background}
+\section{Background and Threat Model}
 % ============================================================
 
-\textit{This section introduces the protocol machinery that the attacks abuse and the detector observes. A reader familiar with RPL and Trickle can move directly to Section~\ref{sec:threat}.}
+RPL organises the network as a tree (a DODAG) rooted at a border router. Each node holds a \textbf{rank}, its distance from the root, and forwards data to a \textbf{preferred parent} of lower rank. Two of the three control messages matter here. A \textbf{DIO} announces a node's identity and rank, and is how the tree is built and maintained. A \textbf{DIS} solicits a DIO, and is normally sent only by a node that has just been switched on.
 
-% -----------------------------------------------------------
-\subsection{The Protocol Stack}
-% -----------------------------------------------------------
+DIO transmission is paced by the \textbf{Trickle} algorithm: frequent while the network is unstable, then doubling the interval until the network is almost silent. Crucially, \textit{receiving a DIS resets the Trickle timer to its minimum}. These two facts are the basis of everything that follows. Because a converged network is quiet, a node sending many DIOs is a statistical outlier, which is what the detector exploits. Because a DIS resets everyone's timer, a DIS attacker makes honest nodes do the work for it, which is why Section~\ref{sec:results} shows it to be by far the more expensive attack.
 
-A Low-Power and Lossy Network places IPv6 over an adaptation layer called 6LoWPAN, which compresses IPv6 headers so that a packet fits inside the 127-byte frame of IEEE 802.15.4, the radio standard used by these devices. Above this sits RPL, and above RPL the application, which in this project is a simple UDP sensor report.
-
-% -----------------------------------------------------------
-\subsection{How RPL Builds a Network}
-% -----------------------------------------------------------
-
-RPL organises the network as a tree, formally a Destination-Oriented Directed Acyclic Graph or DODAG, rooted at one node called the root. The root is normally a border router: a slightly more capable device with a real connection to the internet, which is also the destination of all the data the network produces.
-
-The tree is built from the root outwards. The root announces itself; the nodes that hear the announcement learn that they are one hop away and announce themselves in turn; their neighbours learn that they are two hops away, and so on. Each node stores a \textbf{rank}, which expresses its distance from the root, and selects one neighbour with a lower rank as its \textbf{preferred parent}. Every data packet is then simply handed to the preferred parent, and by induction it reaches the root.
-
-Three control messages maintain this structure:
-
-\begin{itemize}[noitemsep]
-  \item \textbf{DIO} (DODAG Information Object): the announcement described above. A node broadcasts a DIO to say who it is, which DODAG it belongs to, and what its rank is. This is the message the detector counts.
-  \item \textbf{DIS} (DODAG Information Solicitation): a request for a DIO. A node that has just been switched on broadcasts a DIS to ask its neighbours to announce themselves, so that it can join without waiting. After joining, a well-behaved node has almost no reason to send another one.
-  \item \textbf{DAO} (Destination Advertisement Object): sent upwards to inform the root of a node's existence, so that the root can also send packets down the tree.
-\end{itemize}
-
-% -----------------------------------------------------------
-\subsection{Trickle: Why the Network Is Normally Quiet}
-% -----------------------------------------------------------
-
-If every node broadcast a DIO at a fixed rate, the batteries would be exhausted in days. RPL therefore paces DIOs with an algorithm called \textbf{Trickle}. The rule is simple: when something changes, broadcast often; while nothing changes, double the interval each time, up to a configured maximum. A network that has just been switched on is noisy for a minute or two; a converged network is almost silent, with each node broadcasting once every several minutes.
-
-Trickle has a second rule that matters a great deal here: \textit{receiving a DIS resets the timer back to its minimum}. A single solicitation therefore makes every node that hears it noisy again.
-
-These two rules together are the whole basis of the detector and of both attacks. Because a converged network is quiet, a node that broadcasts many DIOs in a five-minute window is statistically obvious. Because a DIS resets everyone's timer, a node that broadcasts many DIS messages can make an entire neighbourhood expensive to run without sending much itself.
-
-% -----------------------------------------------------------
-\subsection{Anomaly-Based Intrusion Detection}
-% -----------------------------------------------------------
-
-Intrusion detection systems are usually divided into signature-based systems, which match traffic against known attack patterns, and anomaly-based systems, which build a profile of normal behaviour and flag whatever deviates from it. Signature-based detection is precise but blind to anything not already catalogued; anomaly-based detection can catch new attacks but must accept a rate of false alarms.
-
-The reference paper is anomaly-based. Its profile is the number of DIO messages a node receives from each of its neighbours in a fixed time window, and its claim is that these counts follow a normal distribution across the neighbourhood, so that a threshold expressed in standard deviations separates honest neighbours from attackers.
-
-A further distinction concerns where the detector runs. It may be centralised on the border router, which is simple but requires every node to report what it hears, or distributed across the nodes themselves. The paper's design is fully distributed and \textbf{stand-alone}: each node monitors its own neighbours and decides alone, exchanging no detection traffic whatsoever. This is its main advantage over earlier systems such as SVELTE, which concentrate the analysis on the border router.
+The attacker is an \textbf{internal} node that joined legitimately and sends well-formed messages; it does not break link-layer security. In the \textbf{neighbour attack} it floods DIOs, forcing neighbours to reprocess and reconsider parent selection. In the \textbf{DIS attack} it floods solicitations, provoking a storm of DIOs from honest nodes. Every node runs the detector on what its own radio hears, with no cooperation. As in the paper, wormhole, sinkhole, selective-forwarding and rank attacks are out of scope.
 
 % ============================================================
-\newpage
-\section{Threat Model}
-\label{sec:threat}
-% ============================================================
-
-The network consists of static nodes with constrained memory and energy, one root that also acts as the data sink, and normal nodes that forward traffic towards it. The attacker is an \textbf{internal} node: it has joined the DODAG legitimately, it holds valid keys, and every message it sends is well formed. It is not assumed to break link-layer encryption; the attacks exploit protocol behaviour after joining, which is precisely the case that cryptography cannot address.
-
-Every normal node runs the detector and observes only what its own radio can hear. There is no cooperation, no shared blacklist, and no reporting to the root.
-
-% -----------------------------------------------------------
-\subsection{The Neighbour Attack}
-% -----------------------------------------------------------
-
-In the neighbour attack the malicious node broadcasts DIO messages far more often than the protocol requires. Each of these messages forces every node in range to process it and reconsider its parent selection. A node may add the attacker to its parent set, or even select it as preferred parent, on the basis of an announcement that does not reflect a usable route; the paper notes that the attacker may not even be within range of the intended destination, so the path degrades. The cost to the victims is processing, radio time, and routing instability.
-
-% -----------------------------------------------------------
-\subsection{The DIS Attack}
-% -----------------------------------------------------------
-
-In the DIS attack the malicious node broadcasts DIS messages instead. Because a received DIS resets the Trickle timer, every neighbour returns to its minimum broadcast interval and starts emitting DIOs frequently again. The attacker therefore amplifies its own effort: a modest stream of solicitations produces a large volume of traffic from honest nodes. This is the reason the DIS attack turns out, in Section~\ref{sec:netimpact}, to be by far the more expensive of the two for the network.
-
-% -----------------------------------------------------------
-\subsection{Out of Scope}
-% -----------------------------------------------------------
-
-Following the reference paper, the wormhole, sinkhole, selective-forwarding, rank and version-number attacks are not implemented. They would broaden the work beyond the paper's contribution and make it harder to attribute any observed effect to the detector under study.
-
-% ============================================================
-\newpage
 \section{The Reference Model}
 % ============================================================
 
-The paper describes its detector as four phases repeated in every observation window. The description below follows the original notation.
-
-\textbf{Phase I.} Each node counts, for every neighbour, the number of DIO messages received during the current time window.
-
-\textbf{Phase II.} At the end of the window the node computes the mean $\mu$ and the standard deviation $\sigma$ of these per-neighbour counts, and derives a threshold
-
-\begin{equation}
-  T = \mu + k\sigma
-\end{equation}
-
-where $k$ is a coefficient that depends on how many neighbours the node has. The authors obtained $k$ empirically: they simulated many attack-free networks of different sizes and densities, recorded for each neighbourhood size the largest deviation that occurred naturally, and fitted a curve through those maxima. The result is a fourth-degree polynomial in the number of neighbours $x$:
+The paper's detector repeats four phases per observation window. \textbf{(I)} Each node counts the DIOs received from every neighbour. \textbf{(II)} At the end of the window it computes the mean $\mu$ and standard deviation $\sigma$ of those counts and derives a threshold $T=\mu+k\sigma$, where the coefficient
 
 \begin{equation}
   k = -5\cdot10^{-5}x^{4} + 0.0037x^{3} - 0.0899x^{2} + 0.9281x - 0.7903
 \end{equation}
 
-The logic is that a node with few neighbours needs a small margin, while a node with many neighbours sees more natural variation and needs a larger one.
+depends on the number of neighbours $x$. The authors obtained it by simulating attack-free networks, recording for each neighbourhood size the largest deviation occurring naturally, and fitting a curve through those maxima. \textbf{(III)} A neighbour above $T$ is a neighbour attacker; independently, a neighbour whose DIS count exceeds 3 is a DIS attacker, 3 being the maximum the authors ever observed in normal traffic. \textbf{(IV)} A detected neighbour is \textbf{temporarily blocked} for one minute, becoming permanently blocked once a counter of repeated detections exceeds 2. The block is temporary precisely because an honest node may be flagged by accident.
 
-\textbf{Phase III.} Any neighbour whose DIO count exceeds $T$ is declared a neighbour attacker. Independently, any neighbour whose DIS count exceeds a fixed threshold is declared a DIS attacker. The authors measured the maximum number of DIS messages a normal node ever produced across all their scenarios, found it to be 3, and adopted that value as the threshold.
-
-\textbf{Phase IV.} A node identified as an attacker is \textbf{temporarily blocked}. The reason for making the block temporary is explicitly stated in the paper: an honest node may occasionally be flagged by accident, and a permanent exclusion would be an excessive penalty. Only after a counter of repeated detections reaches a threshold does the block become permanent. In the paper's simulations the block counter threshold is 2 and the temporary block lasts one minute.
-
-Table~\ref{tab:params} lists the parameters of the reference simulations, which this project adopts as its baseline.
-
-\begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{lX}
-    \toprule
-    \textbf{Parameter} & \textbf{Value in the reference paper} \\
-    \midrule
-    Operating system      & Contiki 2.7 \\
-    Simulator             & Cooja \\
-    Mote                  & Tmote Sky (10 kB RAM, 48 kB ROM) \\
-    Routing               & ContikiRPL \\
-    MAC / duty cycle      & CSMA/CA over ContikiMAC \\
-    Radio medium          & Unit Disk Graph Medium, distance loss \\
-    Range                 & 50 m transmission, 100 m interference \\
-    Deployment area       & 100 m $\times$ 100 m \\
-    Number of nodes       & 20, 30, 40 \\
-    Attackers             & 1 node, 20\%, 30\% \\
-    Traffic               & Constant bit rate, UDP \\
-    Simulation duration   & 30 minutes \\
-    Attack start          & 75 s after the start of the simulation \\
-    Observation window    & 5 minutes \\
-    DIS threshold         & 3 \\
-    Block threshold       & 2, temporary block of 1 minute \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Simulation parameters of the reference paper}
-  \label{tab:params}
-\end{table}
+Baseline parameters, reproduced here: 20/30/40 nodes on a 20\,m grid in $100\times100$\,m, UDGM radio with 50\,m transmission and 100\,m interference range, 1 / 20\% / 30\% attackers, CBR UDP traffic, 30-minute runs, attacks starting at 75\,s, 5-minute window, DIS threshold 3, block threshold 2.
 
 % ============================================================
-\newpage
-\section{System Design}
-% ============================================================
-
-% -----------------------------------------------------------
-\subsection{Node Roles}
-% -----------------------------------------------------------
-
-A simulation contains three kinds of device. The \textbf{root} starts the DODAG and receives the UDP traffic; it deliberately runs no detector, because the paper's system is distributed and keeping the root passive proves that no detection result depends on it. A \textbf{normal node} joins the network, sends one UDP datagram to the root every 30 seconds, and runs the detector on everything it hears. An \textbf{attacker} behaves exactly like a normal node, including the UDP traffic that makes it look operational, but additionally injects control messages on a timer; it runs no detector either, since an attacker has no reason to police its neighbours.
-
-% -----------------------------------------------------------
-\subsection{Detector State}
-% -----------------------------------------------------------
-
-Each normal node keeps one table with a row per neighbour it has ever heard from. A row holds the neighbour's identifier, its DIO and DIS counters for the current window, and the response state: how many times it has been detected so far, whether it is permanently blocked, and, if it is temporarily blocked, the time at which the block expires.
-
-This table is deliberately \textbf{independent of the routing layer's own neighbour table}. RPL only tracks neighbours it might use as parents, whereas the paper's detector must count messages from every node it can hear. Both counts are logged so that the difference can be examined; the paper does not specify which of the two its ``neighbour list'' refers to, and this is recorded as an interpretation.
-
-% -----------------------------------------------------------
-\subsection{Integer Arithmetic}
-% -----------------------------------------------------------
-
-The target device has no floating-point unit, so evaluating the threshold formula naively would be both slow and large. The implementation therefore works entirely in integers scaled by a factor of 1000. The polynomial for $k$ is not evaluated at run time at all: since the number of neighbours is a small integer, the values of $k$ are precomputed on the host for every neighbourhood size from 0 to 40, scaled by 1000, and compiled in as a lookup table of 41 entries. The standard deviation uses an exact integer square root. The consequence is that the detector performs no division or multiplication wider than 64 bits and contains no floating-point code whatsoever.
-
-% -----------------------------------------------------------
-\subsection{Response}
-% -----------------------------------------------------------
-
-When a neighbour is flagged, the node stops accepting its DIO and DIS messages: they are discarded before the routing layer processes them. The effect is exactly what the attack needs to be neutralised, since a discarded DIS cannot reset the Trickle timer and a discarded DIO cannot make the attacker a parent.
-
-This choice deserves justification. A more direct implementation would delete the attacker from the routing layer's neighbour table, but doing so from outside the routing code risks corrupting its internal state, and the routing layer would simply re-learn the neighbour from its next message. Filtering the message before it is parsed achieves the intended effect without touching any routing structure.
-
-One detail is essential for the paper's escalation to work: \textbf{counting continues while a neighbour is blocked}. If the node stopped counting, a blocked attacker would appear silent, would never be detected again, and would never reach the permanent block. Counting through the block is what allows repeated detection to escalate.
-
-% ============================================================
-\newpage
 \section{Implementation}
 % ============================================================
 
-% -----------------------------------------------------------
-\subsection{Toolchain}
-% -----------------------------------------------------------
+The system is four Contiki-NG firmwares plus a host-side analysis pipeline, all pinned inside a Docker image (Contiki-NG \texttt{release/v5.2}, commit \texttt{4ccd1a3b}) so that results are reproducible. Cooja runs headless, driven by a control script inside each scenario, which is what makes a matrix of 148 simulations feasible. Simulations use the native \texttt{cooja} mote, which executes 30 simulated minutes of a 40-node network in a few seconds; the Tmote Sky target is used only for the memory measurements of Section~\ref{sec:overhead}.
 
-The project targets Contiki-NG release v5.2 and the Cooja simulator, both pinned by commit inside a Docker image built on the official Contiki-NG toolchain image. Cooja runs headless, driven by a control script embedded in each scenario file, which is what makes it possible to execute a matrix of one hundred and forty-eight simulations without human interaction. The image records the exact versions of Contiki-NG, Cooja, Java and the two cross-compilers in a file so that they can be quoted in this report.
+\subsection{Capturing and Filtering Control Messages}
 
-Simulations run on the \texttt{cooja} mote, a native build of the firmware executed directly by the simulator. This is orders of magnitude faster than emulating the Tmote Sky instruction by instruction: thirty simulated minutes of a forty-node network complete in a few seconds. The Tmote Sky target is still used, but only for the memory measurements of Section~\ref{sec:overhead}.
+Contiki-NG registers exactly one handler per ICMPv6 message type, so a second handler cannot be added from application code. A two-line patch to the routing layer, applied automatically at image build time, inserts a hook at the top of the DIS handler and immediately after the sender address becomes available in the DIO handler:
 
-% -----------------------------------------------------------
-\subsection{Instrumentation}
-% -----------------------------------------------------------
+\begin{lstlisting}
+if(!ids_rpl_input(RPL_CODE_DIO, &from)) {   /* patch in rpl-icmp6.c */
+  goto discard;                             /* blocked neighbour: drop */
+}
+\end{lstlisting}
 
-The detector must see every DIO and DIS the radio receives. Contiki-NG registers exactly one handler per ICMPv6 message type, so a second handler cannot simply be added from application code. The solution is a patch of two lines against the routing layer, applied automatically when the Docker image is built:
+This single hook serves both purposes of the design: it is where messages are counted and where blocked neighbours are filtered. Filtering here rather than deleting the neighbour from the routing tables is deliberate: it achieves the intended effect, since a discarded DIS cannot reset a Trickle timer and a discarded DIO cannot make the attacker a parent, without risking corruption of routing state that the routing layer would in any case rebuild from the next message.
 
-\begin{itemize}[noitemsep]
-  \item at the top of the DIS input function, and immediately after the sender address becomes available in the DIO input function, a call is inserted to a hook function provided by the detector;
-  \item the hook returns a value that decides whether the message continues to be processed or is discarded.
-\end{itemize}
+\subsection{The Detector}
 
-This single hook therefore serves both purposes described in the design: it is where messages are counted, and it is where blocked neighbours are filtered. The patch is guarded by a preprocessor symbol, so with the feature disabled the routing layer is byte-for-byte the original. Parent changes are captured through a callback that the routing layer already exposes, and required no patch.
+Each node keeps its own neighbour table, independent of the routing layer's. This is an interpretation: the paper does not say which "neighbour list" it means, and the routing layer only tracks candidate parents whereas the detector must count every node it hears. Both counts are logged so the difference can be inspected. The hook itself is short:
 
-% -----------------------------------------------------------
-\subsection{Attackers}
-% -----------------------------------------------------------
+\begin{lstlisting}
+int ids_rpl_input(uint8_t code, const uip_ipaddr_t *from) {
+  n = lookup(ids_node_id(from), 1);
+  if(code == RPL_CODE_DIO) n->dio++; else if(code == RPL_CODE_DIS) n->dis++;
+  if(block_state(n) != 0) { n->dropped++; return 0; }   /* filtered */
+  return 1;
+}
+\end{lstlisting}
 
-The two attacker firmwares reuse the routing layer's own DIO and DIS transmission functions, called on a timer between a configurable start time and a configurable end time. Using the protocol's own functions rather than crafting packets guarantees that the injected messages are indistinguishable from legitimate ones, which is the point of the threat model. The transmission rate is a build parameter, so the same source produces a moderate or an aggressive attacker; the paper's random interval of 5 to 60 seconds for the DIS attack is available as a special value and is the default.
+The ordering is essential and easy to get wrong: \textbf{counting happens before the block is checked}. Were a blocked neighbour to stop being counted, it would appear silent, would never be detected again, and would never reach the permanent block, so the paper's escalation would never fire.
 
-% -----------------------------------------------------------
-\subsection{Logging and Ground Truth}
-% -----------------------------------------------------------
+The threshold is evaluated in \textbf{integer arithmetic scaled by 1000}, because the target has no floating-point unit. The polynomial for $k$ is never evaluated on the mote: since the neighbour count is a small integer, all 41 values are precomputed on the host and compiled in as a lookup table costing 82 bytes. The standard deviation uses an exact integer square root, and the variance is obtained from the identity $n^2\sigma^2 = n\sum x_i^2 - (\sum x_i)^2$, which avoids any intermediate rounding:
 
-Nodes emit tab-separated records over the serial line: one line per received control message, one line per neighbour at every evaluation, one line for the computed profile and threshold, one line per alert, one line per blocking action, and periodic status lines with rank, parent and traffic counters. The simulator's control script prefixes every line with the simulated time and the node identifier, so the entire run is a single machine-readable log.
+\begin{lstlisting}
+num         = (uint64_t)n * sumsq - (uint64_t)sum * sum;  /* n^2 * variance */
+mean_x1000  = (sum * 1000UL) / n;
+sigma_x1000 = isqrt64(num * 1000000ULL) / n;
+thr_x1000   = mean_x1000 + (k_x1000 * sigma_x1000) / 1000;
+\end{lstlisting}
 
-Attackers additionally log every message they inject, and the scenario generator writes a separate ground-truth file listing which nodes are attackers, of which type, and during which interval. The analysis joins alerts against this file. Ground truth is never inferred from the detector's own output, which would make the evaluation circular.
+The sliding mode reuses this function unchanged. It differs only in storage and cadence: each neighbour keeps six 10-second buckets in a ring buffer instead of one counter, and the evaluation timer fires every 10 seconds over the rolling 60-second total rather than every 300 seconds. Confining the difference to those two points is what makes the comparison in Section~\ref{sec:sliding} fair, since both modes run identical detection code.
 
-% -----------------------------------------------------------
-\subsection{Verification}
-% -----------------------------------------------------------
+\subsection{Attackers, Logging and Verification}
 
-The detector's arithmetic is duplicated in Python as a bit-exact reference model. A test replays every stored simulation log, recomputes the profile and the alerts from the logged per-neighbour counts, and requires the results to match the firmware exactly, including the intermediate mean, standard deviation, coefficient and threshold. The test suite contains 28 tests in total and also covers the edge cases prescribed in the project plan: zero neighbours, one neighbour, identical counts, a single large outlier, and DIS counts exactly at and one above the threshold.
+The attacker firmwares are ordinary nodes plus a timer that calls the routing layer's \textit{own} DIO or DIS transmission functions. Using the protocol's functions rather than crafting packets guarantees the injected messages are indistinguishable from legitimate ones, which is what the threat model requires. Rate, start and duration are build parameters.
 
-% ============================================================
-\newpage
-\section{Experimental Methodology}
-% ============================================================
+Nodes emit tab-separated records over the serial line: one per received message, one per neighbour at each evaluation, one for the computed profile and threshold, one per alert and per blocking action, plus periodic status lines. Attackers additionally log every injection, and the scenario generator writes a separate ground-truth file naming the attackers. \textbf{The analysis joins alerts against that file and never infers ground truth from detector output}, which would make the evaluation circular.
 
-Nodes are placed on a regular grid inside the paper's 100~m $\times$ 100~m area, with the root at the top centre and a spacing of 20 metres, reproducing the layout of the reference paper. Figure~\ref{fig:topology} shows the largest configuration. The radio model is the Unit Disk Graph Medium with a transmission range of 50 metres and an interference range of 100 metres.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.72\textwidth]{fig01_topology}
-  \caption{Topology of the 40-node scenario with 30\% attackers. The root is at the top centre; the dashed circle is the 50~m transmission range of one attacker}
-  \label{fig:topology}
-\end{figure}
-
-Every node sends one UDP datagram to the root every 30 seconds. Attacks begin 75 seconds after the start of the simulation, as in the paper, and last 10 minutes; simulations run for 30 minutes. The main matrix covers 20, 30 and 40 nodes with one attacker, 20\% and 30\% attackers, for both attack types and both detector modes, repeated over 5 independent seeds. Two additional sweeps, on the DIS threshold and on the attack rate, use 3 seeds. Development used smaller 10-node, 5-minute scenarios so that the iteration cycle stayed short.
-
-% -----------------------------------------------------------
-\subsection{Metrics and the Unit of Measurement}
-% -----------------------------------------------------------
-
-Defining what counts as one sample is the least obvious methodological decision in this work, and it changes the numbers considerably.
-
-The \textbf{node-level} view classifies each node once per run: an attacker is a true positive if at least one monitor flagged it with the rule appropriate to its attack, and a normal node is a false positive if at least one monitor flagged it with that same rule. This is the view that corresponds to the paper's results table, and it is the one reported throughout Section~\ref{sec:results}. It also reflects what an operator would experience, since one correct detection anywhere in the neighbourhood is enough to act.
-
-The \textbf{decision-level} view instead treats every single judgement, by one monitor about one neighbour at the end of one window, as an independent sample. It is a stricter measure and it is the one that exposes the structural weakness described in Section~\ref{sec:findings}, because it shows that many monitors fail to flag an attacker that one of their peers catches easily.
-
-Both are computed for every run. Detection latency is measured from the start of the attack to the first correct alert.
+Because the mote arithmetic is hand-written integer code, it is duplicated in Python as a bit-exact reference model. A test replays every stored log, recomputes the profile and alerts from the logged counts, and requires an exact match on every intermediate value. The suite has 28 tests and covers the awkward cases: zero neighbours, one neighbour, identical counts, a single large outlier, and DIS counts exactly at and one above the threshold. Running the same scenario twice produced byte-identical logs, so all variation reported below comes from changing the seed.
 
 % ============================================================
-\newpage
-\section{Results}
+\section{Results and Critical Evaluation}
 \label{sec:results}
 % ============================================================
 
-% -----------------------------------------------------------
-\subsection{Baseline Behaviour}
-% -----------------------------------------------------------
-
-In attack-free runs the network converges quickly and behaves as expected: every node obtains a rank and a parent within about 60 seconds, every UDP datagram reaches the root, and nodes change parent on average once, during the initial convergence.
-
-Figure~\ref{fig:dio} shows the number of DIO messages received per neighbour over successive windows. The shape is exactly the one Trickle predicts: a burst while the network converges, then a decline to between zero and one message per neighbour per window. This quiet steady state is what makes the detector possible. The per-neighbour DIS count never exceeded 2 in any attack-free run, which independently confirms the paper's choice of 3 as the DIS threshold.
+The main matrix covers 20/30/40 nodes with 1, 20\% and 30\% attackers, both attacks and both detector modes, over 5 seeds; two sweeps on the DIS threshold and the attack rate use 3 seeds. Figure~\ref{fig:topo} shows the largest configuration, generated from the seed together with its ground-truth file. Node-level metrics classify each node once, matching the paper's table: an attacker is a true positive if any monitor flagged it, a normal node a false positive if any monitor flagged it with the same rule.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{fig02_dio_over_time}
-  \caption{DIO messages received per neighbour over successive observation windows. The attacker is highlighted; honest neighbours settle to 0--1 message per window once Trickle converges}
-  \label{fig:dio}
+  \includegraphics[width=0.46\textwidth]{fig01_topology}
+  \caption{The 40-node scenario with 30\% attackers. Root at top centre (green), attackers in purple; the dashed circle is one attacker's 50\,m transmission range}
+  \label{fig:topo}
 \end{figure}
 
-% -----------------------------------------------------------
-\subsection{The DIS Attack}
-% -----------------------------------------------------------
+\subsection{Baseline and the DIS Attack}
 
-The DIS attack reproduces the reference paper exactly. At 20, 30 and 40 nodes, and with one attacker, 20\% and 30\% attackers, the node-level True Positive Rate is 100\% and the False Positive Rate is 0\%, in every seed and in both detector modes.
+Attack-free runs converge within about 60\,s, deliver every datagram, and average one parent change per node. Per-neighbour DIO counts fall from the Trickle burst to 0--1 per window, and the per-neighbour DIS count never exceeded 2, independently confirming the paper's threshold of 3.
 
-The reason the result is so clean is visible in Figure~\ref{fig:dis}. Honest nodes send at most two DIS messages in their whole lifetime, immediately after being switched on, while the attacker produces a continuous stream. The two populations do not overlap at all, so a fixed threshold placed between them cannot make a mistake in either direction. This is the ideal case for a threshold-based detector, and it explains why the paper's DIS results are perfect rather than merely good.
+\textbf{The DIS attack reproduces the paper exactly}: 100\% TPR and 0\% FPR at every size, every attacker proportion, every seed and both modes. Figure~\ref{fig:dis} shows why the result is so clean rather than merely good: honest nodes stop sending DIS after joining, the attacker never stops, and the two populations do not overlap at all, so a threshold placed between them cannot err in either direction. This is the ideal case for a threshold detector, and it is worth noting that the paper's headline result rests on that separation rather than on the sophistication of the method.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{fig03_dis_over_time}
-  \caption{DIS messages received per neighbour. Honest nodes stop after joining; the attacker's stream is separated from them by a wide margin}
+  \includegraphics[width=0.86\textwidth]{fig03_dis_over_time}
+  \caption{DIS messages per neighbour. Honest nodes stop after joining; the attacker's stream is separated by a wide margin}
   \label{fig:dis}
 \end{figure}
 
-% -----------------------------------------------------------
-\subsection{The Neighbour Attack}
-% -----------------------------------------------------------
+\subsection{The Neighbour Attack and Two Structural Findings}
 
-A single neighbour attacker is also detected reliably: the node-level True Positive Rate is 100\% at 20 nodes, across all seeds. Figure~\ref{fig:threshold} shows the mechanism at the node that detects it, with the attacker's count crossing above the dynamic threshold while the neighbourhood mean stays low.
+A single neighbour attacker is detected at 100\% TPR. Figure~\ref{fig:threshold} shows the mechanism at a detecting monitor: the attacker's count crosses the dynamic threshold while the neighbourhood mean stays low.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{fig04_threshold_vs_count}
-  \caption{Dynamic threshold, neighbourhood mean, and the attacker's DIO count at a detecting monitor. The attacker stays above the threshold once the attack begins}
+  \includegraphics[width=0.78\textwidth]{fig04_threshold_vs_count}
+  \caption{Dynamic threshold, neighbourhood mean and the attacker's DIO count at a detecting monitor}
   \label{fig:threshold}
 \end{figure}
 
-Figure~\ref{fig:alerts} places every alert of one run on a timeline. Filled markers are correct detections of the attacker; hollow markers are false positives on honest nodes. The false positives are not random noise: they are cases where an honest neighbour happened to send two or three DIOs in a window in which the others sent zero or one. Because the counts are small integers, such a neighbour can be several standard deviations above a mean that is itself below one, and the threshold formula flags it. This quantisation effect is the entire source of the false-positive rate on the neighbour rule, and it accounts for the few per cent measured here as well as, most probably, for the 0.2\% to 9.6\% reported in the paper.
+But TPR \textbf{collapses as the attacker proportion grows}: 100\% with one attacker, 33\% at 20\%, and 5\% at 30\%, against the paper's 94--99\%. This is not an implementation defect, and the analysis of why is the main critical contribution of this work.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{fig05_alerts_timeline}
-  \caption{Alerts over the course of one run. Filled markers are true positives on the attacker, hollow markers are false positives caused by integer quantisation of small counts}
-  \label{fig:alerts}
-\end{figure}
+\textbf{Finding 1 --- blind spots at certain neighbourhood sizes.} Algorithm 1 divides by the number of neighbours, making it the \textit{population} standard deviation, computed over a set that \textit{includes the attacker}. By Samuelson's inequality no member of a sample of $n$ values can lie further than $\sqrt{n-1}$ standard deviations from the mean, so a lone attacker is detectable only where $\sqrt{n-1}>k(n)$. This is a hard limit independent of attack rate, because every extra message the attacker sends raises the mean and the deviation that define its own threshold. Since $k$ was fitted to maxima that obey the same inequality, the fitted curve runs very close to the bound and crosses it twice: a monitor with 5--7 or 28--32 neighbours can \textit{never} flag a lone attacker. The prediction was confirmed experimentally. An attacker sending 13--14 DIOs per window against a normal rate of about one was heard by exactly three monitors: the one with 8 neighbours flagged it in all seven windows, while those with 5 and 6 neighbours never flagged it once. The distributed design is what rescues the system, since a single non-blind monitor suffices, which is exactly why node-level TPR stays at 100\% while most individual monitors fail.
 
-However, the True Positive Rate of the neighbour attack \textbf{collapses as the proportion of attackers grows}: from 100\% with a single attacker to 33\% with 20\% attackers and to 5\% with 30\% attackers. The paper reports between 94\% and 99\% in the same configurations. This discrepancy is not a defect of the implementation but a property of the threshold itself, and the next section explains it.
+\textbf{Finding 2 --- attackers mask each other.} When several attackers share a monitor they all inflate the mean and the deviation, so the threshold rises with them and none stands out. This generalises the same inequality to several outliers and explains the collapse at 20\% and 30\%. The measured drop is steeper than the paper's, and two differences plausibly account for the gap: attackers here are placed by seed and often fall within range of one another, and this attacker floods at a fixed rate whereas the paper's rebroadcasts received DIOs, a less synchronised pattern. Neither changes the mechanism, so the conclusion stands as a limit of the published threshold under collusion.
 
-% -----------------------------------------------------------
-\subsection{Two Structural Findings}
-\label{sec:findings}
-% -----------------------------------------------------------
+False positives on the neighbour rule are not noise. They are cases where an honest neighbour sent two or three DIOs in a window where others sent zero or one; because the counts are small integers, such a node sits several deviations above a mean below one. This quantisation effect is the whole source of the neighbour-rule FPR, here a few per cent, and very probably of the paper's 0.2--9.6\% as well.
 
-\subsubsection{Blind Spots at Certain Neighbourhood Sizes}
-
-Algorithm 1 of the paper computes the standard deviation by dividing by the number of neighbours, which makes it the \textit{population} standard deviation, and it computes it over a set that \textit{includes the attacker}. This has a consequence the authors do not discuss.
-
-Samuelson's inequality states that in a sample of $n$ values, no single value can be further than $\sqrt{n-1}$ standard deviations from the mean. A lone attacker is therefore detectable only if
-
-\begin{equation}
-  \sqrt{n-1} > k(n)
-\end{equation}
-
-and this is a hard limit: it holds no matter how many messages the attacker sends, because every extra message raises the mean and the standard deviation that define its own threshold.
-
-The difficulty is that the paper obtained $k$ by fitting the largest deviations observed in normal traffic, and those maxima are themselves constrained by the same inequality. The fitted curve consequently runs very close to the bound and crosses it twice. Evaluating both sides for every neighbourhood size gives the blind spots in Table~\ref{tab:blind}: a node with 5, 6 or 7 neighbours, or with 28 to 32 neighbours, can never flag a lone attacker.
+\subsection{Fixed versus Sliding Window}
+\label{sec:sliding}
 
 \begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{lXl}
-    \toprule
-    \textbf{Neighbours $n$} & \textbf{Relation between $\sqrt{n-1}$ and $k(n)$} & \textbf{Lone attacker} \\
-    \midrule
-    2--4   & $\sqrt{n-1}$ above $k(n)$, narrowly at $n=4$ & detectable \\
-    5--7   & $k(n)$ above $\sqrt{n-1}$                    & \textbf{never detected} \\
-    8--27  & $\sqrt{n-1}$ above $k(n)$                    & detectable \\
-    28--32 & $k(n)$ above $\sqrt{n-1}$, polynomial peak   & \textbf{never detected} \\
-    33--40 & $\sqrt{n-1}$ above $k(n)$                    & detectable \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Neighbourhood sizes at which the published threshold cannot detect a single attacker, at any attack rate}
-  \label{tab:blind}
-\end{table}
-
-The prediction was verified experimentally. In one scenario an attacker sending 13 to 14 DIOs per window, against a normal rate of about one, was heard by exactly three monitors. The monitor with 8 neighbours flagged it in all seven windows of the attack. The monitors with 5 and 6 neighbours never flagged it, in any window, exactly as the inequality requires.
-
-The distributed design is what saves the system: a single monitor outside the blind range is sufficient for the attacker to be caught, which is why the node-level True Positive Rate remains 100\% even though most individual monitors fail.
-
-\subsubsection{Multiple Attackers Mask One Another}
-
-The second finding follows from the same statistics. When several attackers are within range of the same monitor, they all contribute their inflated counts to the mean and to the standard deviation. The threshold rises with them, and no individual attacker stands out from the group. The effect is the generalisation of the previous inequality from one outlier to several, and it is what drives the collapse of the True Positive Rate at 20\% and 30\% attackers.
-
-The measured drop is steeper than the paper's. Two differences plausibly account for the gap. The attackers here are placed by seed and frequently fall within radio range of one another, so they share monitors; and the attacker implemented here floods at a constant rate, whereas the paper's attacker rebroadcasts the DIOs it receives, which produces a different and less synchronised traffic pattern. Neither difference changes the mechanism, and the conclusion stands as a limitation of the published threshold when attackers collude.
-
-% -----------------------------------------------------------
-\subsection{Fixed Versus Sliding Window}
-% -----------------------------------------------------------
-
-The original contribution of this project is a second detector mode. Both modes use identical counters, identical thresholds, identical topologies and identical seeds; the only difference is how often the counters are examined. The paper's mode evaluates once every 300 seconds. The sliding mode keeps the last 60 seconds as six buckets of 10 seconds each and re-evaluates the rolling total every 10 seconds.
-
-Table~\ref{tab:main} reports the full matrix, and Figure~\ref{fig:sizes} shows the same data as a function of network size.
-
-\begin{table}[H]
-  \centering
-  \small
-  \begin{tabularx}{\textwidth}{llcXcccc}
+  \centering \small
+  \begin{tabularx}{0.95\textwidth}{llcXcccc}
     \toprule
     \textbf{Nodes} & \textbf{Attack} & \textbf{Att.} & \textbf{Mode} & \textbf{TPR \%} & \textbf{FPR \%} & \textbf{Lat. s} & \textbf{DIO/min} \\
     \midrule
@@ -522,222 +263,66 @@ Table~\ref{tab:main} reports the full matrix, and Figure~\ref{fig:sizes} shows t
     40 & neighbour & 30\% & sliding & 13.3  & 1.4  & 11  & 20.5 \\
     \bottomrule
   \end{tabularx}
-  \caption{Main matrix, node-level metrics, mean over 5 seeds. DIO/min is the number of DIO messages received per node per minute; the attack-free baseline is 4.6}
+  \caption{Main matrix, node-level, mean over 5 seeds. DIO/min is DIO receptions per node per minute; the attack-free baseline is 4.6}
   \label{tab:main}
 \end{table}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{fig06_tpr_fpr_by_size}
-  \caption{True and False Positive Rates as a function of network size, for both attacks}
-  \label{fig:sizes}
-\end{figure}
-
-Averaged over the six attack configurations, the sliding window reduces the mean detection latency from 225 seconds to 28 seconds, an improvement of roughly an order of magnitude, while raising the mean node-level False Positive Rate from 1.5\% to 11.1\%. Figure~\ref{fig:modes} summarises the comparison.
+Both modes share identical counters, thresholds, topologies and seeds; only the evaluation cadence differs. Averaged over the six attack configurations the sliding window cuts mean detection latency from 225\,s to 28\,s, roughly an order of magnitude, while raising mean node-level FPR from 1.5\% to 11.1\% (Figure~\ref{fig:modes}).
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth]{fig09_mode_comparison}
-  \caption{Fixed versus sliding observation window: detection rate, false-positive rate, and mean detection latency}
+  \includegraphics[width=0.94\textwidth]{fig09_mode_comparison}
+  \caption{Fixed versus sliding window: detection rate, false-positive rate and mean latency}
   \label{fig:modes}
 \end{figure}
 
-Two results were not anticipated. The first is that the sliding window \textit{improves} the True Positive Rate under multiple attackers, from 33\% to 47\% and from 5\% to 13\%: a shorter window captures an attacker's burst before the counts of the other attackers have accumulated into the mean, so it partially resists the masking effect. The second is that it substantially reduces the traffic caused by the DIS attack, from 61 to 24 received DIOs per node per minute in the largest configuration, because the attackers are blocked much earlier and therefore reset far fewer Trickle timers. A faster detector is not only more responsive; it is also cheaper for the network it protects.
+Two results were not anticipated. The sliding window \textit{improves} TPR under multiple attackers, from 33\% to 47\% and from 5\% to 13\%, because a shorter window captures an attacker's burst before the other attackers' counts accumulate into the mean; it therefore partly resists the masking of Finding 2. It also halves the traffic the DIS attack provokes, from 61 to 24 DIO receptions per node per minute in the largest configuration, because attackers are blocked earlier and reset far fewer Trickle timers. A faster detector is not only more responsive but cheaper for the network it protects.
 
-The costs are equally concrete. In attack-free runs the node-level False Positive Rate reaches 100\% in sliding mode against 41\% in the paper mode, simply because evaluating thirty times more often gives every honest node thirty times more opportunities to be flagged once by the quantisation effect. More seriously, the sliding mode issues approximately one hundred \textit{permanent} blocks per run \textbf{even when no attacker is present}, against none in the paper mode. The reason is that the response parameters, two temporary blocks before a permanent one, were calibrated for one decision every five minutes and not for thirty. A sliding detector cannot inherit them unchanged: it needs a higher block counter threshold, or a requirement that detections be consecutive, before the response is safe to deploy.
+The costs are equally concrete, and both are cautionary. In attack-free runs node-level FPR reaches 100\% against 41\%, simply because evaluating thirty times more often gives each honest node thirty times more chances to be flagged once by quantisation. More seriously, the sliding mode issues roughly \textbf{one hundred permanent blocks per run with no attacker present}, against none in the paper mode, because the response parameters (two temporary blocks, then permanent) were calibrated for one decision per five minutes and not for thirty. A sliding detector cannot inherit them unchanged.
 
-% -----------------------------------------------------------
-\subsection{Network Impact}
-\label{sec:netimpact}
-% -----------------------------------------------------------
+\subsection{Sensitivity to Threshold and Attack Rate}
 
-\begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{llXccc}
-    \toprule
-    \textbf{Nodes} & \textbf{Attack} & \textbf{Attackers} & \textbf{PDR} & \textbf{Delay ms} & \textbf{DIO/min} \\
-    \midrule
-    20 & baseline  & --   & 1.000 & 38 & 4.6 \\
-    20 & neighbour & 1    & 1.000 & 38 & 6.2 \\
-    20 & DIS       & 1    & 1.000 & 38 & 27.4 \\
-    30 & neighbour & 20\% & 1.000 & 50 & 11.5 \\
-    30 & DIS       & 20\% & 1.000 & 51 & 41.9 \\
-    40 & neighbour & 30\% & 1.000 & 63 & 24.3 \\
-    40 & DIS       & 30\% & 1.000 & 64 & 61.0 \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Network impact of the attacks, paper mode. Packet Delivery Ratio and delay are unaffected; the cost falls entirely on the control plane}
-  \label{tab:netimpact}
-\end{table}
+The DIS threshold was tested at 2, 3 and 5: TPR remained 100\% and FPR 0\% in all three, with only the latency rising at 5 (325\,s against 225\,s). Detection is insensitive here because honest nodes never exceed 2 per window and the attacker sends about 10, so any value between separates them. The paper's choice of 3 sits comfortably in the usable range.
 
-Table~\ref{tab:netimpact} and Figure~\ref{fig:netimpact} report the effect of the attacks on the network itself. Packet delivery stays at 1.000 and the end-to-end delay is unchanged, which at first sight is surprising for an attack. The explanation is the radio model: the Unit Disk Graph Medium is configured with a success ratio of 1.0, and one datagram per node every thirty seconds leaves the channel far from saturation. In these conditions the attacks cannot cause losses, and their cost is paid in energy and stability rather than in delivery. A lossy radio model would produce a different and less favourable picture, and this is noted as a limitation.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{fig07_network_impact}
-  \caption{Packet delivery ratio and control-plane overhead, attack-free runs against attacks, for both detector modes}
-  \label{fig:netimpact}
-\end{figure}
-
-Where the damage does appear is in the control plane, and there it is severe. A single DIS attacker multiplies the number of DIO messages each node receives by six, and 30\% of attackers by thirteen, because every solicitation resets the Trickle timer of every node in range. Parent changes rise from 1.00 to 1.44 per node over the run. The neighbour attack is considerably cheaper for the network, since it adds essentially only its own messages. This confirms the asymmetry anticipated in the threat model: the DIS attack is the more efficient of the two from the attacker's point of view, because it makes honest nodes do the work.
-
-% -----------------------------------------------------------
-\subsection{Sensitivity to the DIS Threshold}
-% -----------------------------------------------------------
-
-The paper's DIS threshold of 3 was obtained from measurements and its robustness is worth testing. Values of 2, 3 and 5 were evaluated at 20 nodes with one DIS attacker at the paper's random rate.
+The attack-rate sweep (Table~\ref{tab:rates}) produced a \textbf{third finding}. The paper mode detects every rate with the same one-window latency, which is both its strength and its weakness. The sliding mode scales with the attack, down to 5\,s, but \textit{fails completely against a slow DIS attacker}: one message every 30\,s puts at most two inside a 60\,s window, and two never exceeds a threshold of 3 that was calibrated on a window five times longer. The lesson generalises beyond this project: \textbf{a rule expressed as an absolute count is bound to the window that produced it}, and shortening the window silently weakens it. The neighbour rule suffers nothing of the sort because it compares a neighbour against its peers rather than against a fixed number, and it holds at every rate in both modes.
 
 \begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{XXXX}
-    \toprule
-    \textbf{DIS threshold} & \textbf{TPR \%} & \textbf{FPR \%} & \textbf{Latency s} \\
-    \midrule
-    2          & 100 & 0.0 & 225 \\
-    3 (paper)  & 100 & 0.0 & 225 \\
-    5          & 100 & 0.0 & 325 \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Sensitivity of the DIS rule to the value of its threshold}
-  \label{tab:disthr}
-\end{table}
-
-Detection is entirely insensitive to the threshold in this range, for the reason already given: honest nodes never exceed 2 messages per window and the attacker produces around 10, so any threshold between the two separates them. Raising the value to 5 only delays detection, when a particular window happens to contain few attacker messages. The paper's choice sits comfortably in the middle of the usable range.
-
-% -----------------------------------------------------------
-\subsection{Sensitivity to the Attack Rate}
-% -----------------------------------------------------------
-
-The last experiment varies the aggressiveness of the attacker, from one message per second to one every thirty seconds, plus the paper's random interval.
-
-\begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{lXXX}
+  \centering \small
+  \begin{tabularx}{0.8\textwidth}{lXXX}
     \toprule
     \textbf{Attack} & \textbf{Period} & \textbf{Paper mode} & \textbf{Sliding mode} \\
     \midrule
     DIS       & 1 s            & 100\% / 225 s & 100\% / 5 s \\
-    DIS       & 5 s            & 100\% / 225 s & 100\% / 25 s \\
     DIS       & 10 s           & 100\% / 225 s & 100\% / 45 s \\
     DIS       & 30 s           & 100\% / 225 s & \textbf{0\%} / not detected \\
     DIS       & random 5--60 s & 100\% / 225 s & \textbf{33\%} / 575 s \\
-    \midrule
     neighbour & 1 s            & 100\% / 225 s & 100\% / 5 s \\
-    neighbour & 5 s            & 100\% / 225 s & 100\% / 22 s \\
-    neighbour & 10 s           & 100\% / 225 s & 100\% / 28 s \\
     neighbour & 30 s           & 100\% / 225 s & 100\% / 55 s \\
     neighbour & random 5--60 s & 100\% / 225 s & 100\% / 38 s \\
     \bottomrule
   \end{tabularx}
-  \caption{Detection rate and latency as a function of attack rate. Cells give True Positive Rate and mean detection latency}
+  \caption{TPR / mean latency as a function of attack rate, 20 nodes, one attacker}
   \label{tab:rates}
 \end{table}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{fig08_latency_by_rate}
-  \caption{Detection latency and True Positive Rate as a function of the attack period. The sliding mode is faster at every rate but loses the slow DIS attacker entirely}
-  \label{fig:rates}
-\end{figure}
-
-The paper mode detects every rate with the same latency of one window, which is both its strength and its weakness: it is insensitive to how aggressive the attacker is, but it is never faster than 225 seconds. The sliding mode scales with the attack, detecting an aggressive attacker in 5 seconds.
-
-But Table~\ref{tab:rates} also reveals a \textbf{third finding}. The sliding mode fails completely against a slow DIS attacker. A message every 30 seconds places at most two of them inside a 60-second window, and two never exceeds the threshold of 3. That threshold was calibrated by the authors on a window five times longer, and it does not transfer. The consequence is general: \textit{a detection rule expressed as an absolute count is bound to the length of the window that produced it}, and shortening the window silently weakens it. A sliding implementation must either scale the threshold with the window, which for a 60-second window means a value near 1 and a considerable false-positive risk, or replace the count with a rate. It is worth noting that the neighbour rule suffers nothing of the sort: because it compares a neighbour against its peers rather than against an absolute number, it remains valid at every rate and in both modes.
-
-% -----------------------------------------------------------
-\subsection{Resource Overhead}
+\subsection{Network Impact and Resource Cost}
 \label{sec:overhead}
-% -----------------------------------------------------------
 
-\begin{table}[H]
-  \centering
-  \begin{tabularx}{\textwidth}{Xcc}
-    \toprule
-    \textbf{Component} & \textbf{ROM} & \textbf{RAM} \\
-    \midrule
-    IDS module alone                       & 1988 B & 588 B \\
-    Stock routing and UDP node, no IDS     & 44578 B (91\%) & 7036 B (69\%) \\
-    Available on the Tmote Sky             & 49152 B & 10240 B \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Memory footprint measured on the Tmote Sky target}
-  \label{tab:overhead}
-\end{table}
+Packet delivery stayed at 1.000 and end-to-end delay unchanged in \textit{every} configuration, including twelve attackers out of forty. This is a limitation of the setup rather than a property of the attacks: the UDGM radio is configured with success ratio 1.0 and one datagram per node every 30\,s leaves the channel far from saturation, so losses cannot occur. A lossy model would give a less favourable picture. The damage instead falls entirely on the control plane, where it is severe: a single DIS attacker multiplies DIO receptions sixfold and 30\% of attackers thirteenfold (Table~\ref{tab:main}), while parent changes rise from 1.00 to 1.44 per node. On battery-powered devices that translates directly into shortened lifetime. The observation is worth stating plainly: \textit{an attack can be entirely successful while the metric one instinctively checks stays perfect}.
 
-The detector itself is genuinely lightweight, as the paper claims: about 2~kB of ROM and 0.6~kB of RAM, the latter dominated by the neighbour table, with the sliding mode adding roughly 0.5~kB more for the ring buffers. The lookup table for the coefficient $k$ costs 82 bytes.
-
-The complication is elsewhere. Under Contiki-NG v5.2 a stock node running only the routing layer and a UDP application already occupies 91\% of the Tmote Sky's ROM, leaving about 4.5~kB free. The detector fits within that margin, but the instrumented firmware used for these experiments, which prints a detailed record for every message and every decision, does not: it exceeds the available ROM by roughly 10~kB. The measurements were therefore taken on the native simulator target.
-
-This is a genuine finding about the platform rather than about the detector. The paper ran on the same hardware but on Contiki 2.7, whose routing implementation was substantially smaller and left far more room. A production deployment, containing the detector but not the verbose instrumentation, would still fit on the Sky; the logging is an artefact of measurement and not part of the system.
+On the Tmote Sky the detector needs 1988\,B of ROM and 588\,B of RAM, the sliding mode adding about 0.5\,kB more for the ring buffers, so the paper's claim of a lightweight module is confirmed. However, under Contiki-NG v5.2 a stock node with only the routing layer and a UDP application already occupies 44578 of 49152\,B of ROM (91\%). The detector fits in the remaining margin but the instrumented firmware used here, which logs every message and decision, exceeds it by about 10\,kB. This is a finding about the platform, not the method: the paper used the same hardware on Contiki 2.7, whose routing layer was much smaller. A deployment carrying the detector without the measurement logging would still fit.
 
 % ============================================================
-\newpage
-\section{Discussion}
-% ============================================================
-
-The reference paper's method works, and works cheaply, wherever its assumptions hold. The DIS attack is caught perfectly because honest and malicious behaviour do not overlap at all, and the rule that separates them is a single comparison. A lone neighbour attacker is caught whenever at least one monitor outside the blind range hears it. The false positives are neither mysterious nor alarming: they are the arithmetic consequence of applying a formula based on means and standard deviations to counts that are almost always zero or one.
-
-The weaknesses found here are structural rather than accidental. Both the blind spots and the masking effect follow from the same decision, namely computing the dispersion over a set that contains the suspect, and both are invisible in an evaluation that reports only aggregate detection rates. They do not make the method useless, since the distributed design compensates for individual failures, but they do bound what it can promise: neither ``100\% detection'' nor a guarantee against a small coordinated group.
-
-The sliding window behaves as hypothesised on latency and false positives, and better than hypothesised on two counts, since it partly resists masking and substantially reduces the traffic the DIS attack generates. Its two failures are more instructive than its successes. The over-blocking in attack-free runs and the blindness to slow DIS attackers both come from inheriting parameters, the block counter and the DIS threshold, that were tuned for a different window length. The lesson generalises beyond this project: when the observation window of a detector is changed, every parameter expressed in absolute terms must be re-derived, not carried over.
-
-Finally, the network-impact measurements are a reminder that an attack can be entirely successful without affecting the metric one instinctively checks. Packet delivery was perfect in every configuration, including with twelve attackers out of forty; the damage was a thirteen-fold increase in control traffic, which on battery-powered devices translates directly into shortened lifetime.
-
-% ============================================================
-\newpage
-\section{Limitations and Future Work}
-% ============================================================
-
-The evaluation is entirely simulated, with static nodes, a lossless radio model, and a configuration in which ground truth is known exactly. The delivery and delay results in particular should be read as lower bounds on the damage: a lossy channel or heavier application traffic would allow the additional control messages to cause real losses.
-
-The gap between the multi-attacker detection rates measured here and those reported in the paper deserves a dedicated study. Two explanations were identified but not isolated: the placement of attackers relative to one another, and the difference between an attacker that floods at a fixed rate and one that rebroadcasts the messages it receives. Implementing the second variant and repeating the matrix would settle the question.
-
-Three directions follow naturally from the findings. The masking effect could be attenuated by estimating the dispersion robustly, for instance from a median absolute deviation, or by excluding already-suspected neighbours from the profile before recomputing it. The sliding detector needs its response parameters re-derived and its DIS rule expressed as a rate rather than a count. And the whole system should eventually be measured on real hardware, which requires trimming the instrumentation to fit the memory available.
-
-% ============================================================
-\newpage
 \section{Conclusion}
 % ============================================================
 
-The question this project set out to answer was whether a distributed, low-resource anomaly-based IDS can detect RPL neighbour and DIS attacks using only what each node can observe locally. The answer is yes, with qualifications that the reproduction itself made visible.
+A distributed anomaly-based IDS can detect RPL neighbour and DIS attacks from purely local observations, and the reference model reproduces on a modern stack a decade after publication. The DIS attack is detected at 100\% TPR and 0\% FPR at every size and proportion tested, and a single neighbour attacker is detected reliably, at a cost of about 2\,kB of ROM, 0.6\,kB of RAM and no added traffic.
 
-The DIS attack is detected with a True Positive Rate of 100\% and a False Positive Rate of 0\% at every network size and every attacker proportion tested, exactly as the reference paper reports. A single neighbour attacker is likewise detected reliably. The detector costs about 2~kB of ROM and 0.6~kB of RAM, needs no coordination between nodes, and adds no traffic of its own.
+The reproduction also bounds those claims. Because the threshold computes its dispersion over a set containing the attacker, it can never detect a lone attacker at certain neighbourhood sizes, and it degrades sharply when attackers share a monitor: TPR falls from 100\% to 33\% to 5\% as the attacker proportion rises. Both effects were predicted analytically and then confirmed in simulation, and neither is visible in an evaluation reporting only aggregate rates.
 
-The qualifications concern the threshold formula. Because it computes the standard deviation over a set that includes the attacker, it cannot detect a lone attacker at certain neighbourhood sizes regardless of how aggressive that attacker is, and it degrades sharply when several attackers share a monitor. Both effects were predicted analytically and then confirmed in simulation.
+The sliding-window extension shows a clear trade-off: latency falls by an order of magnitude and, unexpectedly, masking resistance improves and the DIS-induced traffic halves; against this, false positives rise sharply, the response parameters over-block the network unless re-derived, and a slow DIS attacker escapes entirely. The last point is the most transferable result of the work: \textbf{the parameters of a threshold detector cannot be separated from the observation window they were measured on}.
 
-The comparison between observation windows shows a clear trade-off. A sliding 60-second window reduces detection latency by an order of magnitude and, unexpectedly, both resists attacker masking better and halves the control traffic that the DIS attack provokes. Against this it produces considerably more false positives, over-blocks the network unless the response parameters are re-derived, and fails entirely against a slow DIS attacker because an absolute threshold does not survive being moved to a shorter window.
-
-Table~\ref{tab:hyp} summarises the outcome against the hypotheses formulated before the experiments.
-
-\begin{table}[H]
-  \centering
-  \small
-  \begin{tabularx}{\textwidth}{cXXc}
-    \toprule
-    \textbf{\#} & \textbf{Hypothesis} & \textbf{Outcome} & \textbf{Verdict} \\
-    \midrule
-    H1 & A neighbour attacker deviates from the DIO profile and is detected
-       & Confirmed for a single attacker; bounded by neighbourhood size and by the number of attackers
-       & Partly \\
-    H2 & A DIS attacker exceeds the per-window DIS threshold
-       & Confirmed without exception, in every configuration and both modes
-       & Yes \\
-    H3 & Raising the attacker proportion increases attack traffic but also degrades detection
-       & Confirmed, and more strongly than the paper suggests: 100\% to 33\% to 5\%
-       & Yes \\
-    H4 & A sliding window lowers latency at the price of more false positives
-       & Confirmed: 225~s to 28~s, false positives 1.5\% to 11.1\%, plus over-blocking
-       & Yes \\
-    H5 & The IDS has a measurable but modest resource cost and needs no central monitor
-       & Confirmed: 2~kB ROM, 0.6~kB RAM, no detection traffic; but the platform itself is nearly full
-       & Yes \\
-    \bottomrule
-  \end{tabularx}
-  \caption{Outcome of the experiments against the initial hypotheses}
-  \label{tab:hyp}
-\end{table}
-
-\textbf{Overall:} the reference model is a good piece of engineering for the problem it addresses, and it reproduces on a modern stack a decade after publication. What this work adds is a clearer view of its boundaries. The blind spots and the masking effect are consequences of one design decision in the threshold, and the sliding-window experiment shows that the parameters of such a detector cannot be separated from the window they were measured on. Both are useful cautions for anyone deploying a threshold-based intrusion detection system on constrained devices.
+Hypotheses H2 (DIS detectable by a fixed threshold), H3 (more attackers degrade detection), H4 (sliding window trades false positives for latency) and H5 (modest, decentralised resource cost) are confirmed. H1 (a neighbour attacker deviates from the DIO profile and is detected) holds only for a single attacker and only outside the blind ranges, and must be qualified accordingly.
 
 % ============================================================
 \end{document}
