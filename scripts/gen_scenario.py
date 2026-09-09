@@ -108,6 +108,7 @@ def build(args):
         f"ATTACK_START_SEC={args.attack_start}" if args.attack_start else "",
         f"ATTACK_DURATION_SEC={args.attack_duration}" if args.attack_duration is not None else "",
         f"ATTACK_PERIOD_MS={args.attack_period_ms}" if args.attack_period_ms is not None else "",
+        f"ATTACK_REBROADCAST={args.rebroadcast}" if args.rebroadcast is not None else "",
     ] if v)
 
     types = [motetype_xml("RPL root + UDP sink", "rpl-ids-root", [1], pos, ids_vars)]
@@ -178,6 +179,8 @@ def main():
     ap.add_argument("--attack-start", type=int, default=0, help="ATTACK_START_SEC (paper: 75)")
     ap.add_argument("--attack-duration", type=int, default=None, help="ATTACK_DURATION_SEC (0=to end)")
     ap.add_argument("--attack-period-ms", type=int, default=None, help="ATTACK_PERIOD_MS (0=random 5-60s)")
+    ap.add_argument("--rebroadcast", type=int, default=None,
+                    help="ATTACK_REBROADCAST: 1 = paper's rebroadcast-on-receipt neighbour attack, 0 = fixed-rate flood")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 

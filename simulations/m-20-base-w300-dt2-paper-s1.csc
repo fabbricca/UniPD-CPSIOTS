@@ -18,7 +18,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>RPL root + UDP sink</description>
       <source>[CONFIG_DIR]/../firmware/rpl-ids-root.c</source>
-      <commands>$(MAKE) -j$(CPUS) rpl-ids-root.cooja TARGET=cooja IDS_MODE=PAPER IDS_WINDOW_SEC=300 IDS_DIS_THRESHOLD=2 IDS_LOG_EVENTS=0</commands>
+      <commands>$(MAKE) -j$(CPUS) rpl-ids-root.cooja TARGET=cooja IDS_MODE=PAPER IDS_WINDOW_SEC=300 IDS_DIS_THRESHOLD=2</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
@@ -50,7 +50,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Normal node (UDP client + IDS)</description>
       <source>[CONFIG_DIR]/../firmware/rpl-ids-node.c</source>
-      <commands>$(MAKE) -j$(CPUS) rpl-ids-node.cooja TARGET=cooja IDS_MODE=PAPER IDS_WINDOW_SEC=300 IDS_DIS_THRESHOLD=2 IDS_LOG_EVENTS=0</commands>
+      <commands>$(MAKE) -j$(CPUS) rpl-ids-node.cooja TARGET=cooja IDS_MODE=PAPER IDS_WINDOW_SEC=300 IDS_DIS_THRESHOLD=2</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>

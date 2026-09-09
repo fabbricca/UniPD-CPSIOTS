@@ -18,7 +18,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>RPL root + UDP sink</description>
       <source>[CONFIG_DIR]/../firmware/rpl-ids-root.c</source>
-      <commands>$(MAKE) -j$(CPUS) rpl-ids-root.cooja TARGET=cooja IDS_MODE=SLIDING IDS_WINDOW_SEC=300 IDS_LOG_EVENTS=0</commands>
+      <commands>$(MAKE) -j$(CPUS) rpl-ids-root.cooja TARGET=cooja IDS_MODE=SLIDING IDS_WINDOW_SEC=300</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
@@ -50,7 +50,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>Normal node (UDP client + IDS)</description>
       <source>[CONFIG_DIR]/../firmware/rpl-ids-node.c</source>
-      <commands>$(MAKE) -j$(CPUS) rpl-ids-node.cooja TARGET=cooja IDS_MODE=SLIDING IDS_WINDOW_SEC=300 IDS_LOG_EVENTS=0</commands>
+      <commands>$(MAKE) -j$(CPUS) rpl-ids-node.cooja TARGET=cooja IDS_MODE=SLIDING IDS_WINDOW_SEC=300</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>
@@ -342,7 +342,7 @@
       org.contikios.cooja.contikimote.ContikiMoteType
       <description>dis attacker</description>
       <source>[CONFIG_DIR]/../firmware/dis-attacker.c</source>
-      <commands>$(MAKE) -j$(CPUS) dis-attacker.cooja TARGET=cooja IDS_MODE=SLIDING IDS_WINDOW_SEC=300 IDS_LOG_EVENTS=0 ATTACK_START_SEC=75 ATTACK_DURATION_SEC=600 ATTACK_PERIOD_MS=5000</commands>
+      <commands>$(MAKE) -j$(CPUS) dis-attacker.cooja TARGET=cooja IDS_MODE=SLIDING IDS_WINDOW_SEC=300 ATTACK_START_SEC=75 ATTACK_DURATION_SEC=0 ATTACK_PERIOD_MS=0</commands>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.Battery</moteinterface>
       <moteinterface>org.contikios.cooja.contikimote.interfaces.ContikiVib</moteinterface>

@@ -27,20 +27,29 @@ PRESETS = {
         dict(nodes=10, spacing=30, attack="dis", attackers="1", period_ms=10000,
              attack_start=75, attack_duration=0, duration=10, window=60),
     ],
+    # Paper-faithful: neighbour attacker rebroadcasts every DIO it receives
+    # (paper II.C); DIS attacker uses the paper's random 5-60 s interval
+    # (period_ms=0). Both run from 75 s to the end of the 30-minute run.
     "paper": [
+        # Attack-free reference at every network size. The 30- and 40-node
+        # baselines matter because DIO receptions per node grow with density,
+        # so an attack at 40 nodes can only be compared against a 40-node
+        # baseline, not against the 20-node one.
         dict(nodes=20, spacing=20, attack="baseline", attackers="0", duration=30, window=300),
-        dict(nodes=20, spacing=20, attack="neighbor", attackers="1", period_ms=10000,
-             attack_start=75, attack_duration=600, duration=30, window=300),
-        dict(nodes=20, spacing=20, attack="dis", attackers="1", period_ms=10000,
-             attack_start=75, attack_duration=600, duration=30, window=300),
-        dict(nodes=30, spacing=20, attack="neighbor", attackers="20%", period_ms=10000,
-             attack_start=75, attack_duration=600, duration=30, window=300),
-        dict(nodes=30, spacing=20, attack="dis", attackers="20%", period_ms=10000,
-             attack_start=75, attack_duration=600, duration=30, window=300),
-        dict(nodes=40, spacing=20, attack="neighbor", attackers="30%", period_ms=5000,
-             attack_start=75, attack_duration=600, duration=30, window=300),
-        dict(nodes=40, spacing=20, attack="dis", attackers="30%", period_ms=5000,
-             attack_start=75, attack_duration=600, duration=30, window=300),
+        dict(nodes=30, spacing=20, attack="baseline", attackers="0", duration=30, window=300),
+        dict(nodes=40, spacing=20, attack="baseline", attackers="0", duration=30, window=300),
+        dict(nodes=20, spacing=20, attack="neighbor", attackers="1", rebroadcast=1,
+             attack_start=75, attack_duration=0, duration=30, window=300),
+        dict(nodes=20, spacing=20, attack="dis", attackers="1", period_ms=0,
+             attack_start=75, attack_duration=0, duration=30, window=300),
+        dict(nodes=30, spacing=20, attack="neighbor", attackers="20%", rebroadcast=1,
+             attack_start=75, attack_duration=0, duration=30, window=300),
+        dict(nodes=30, spacing=20, attack="dis", attackers="20%", period_ms=0,
+             attack_start=75, attack_duration=0, duration=30, window=300),
+        dict(nodes=40, spacing=20, attack="neighbor", attackers="30%", rebroadcast=1,
+             attack_start=75, attack_duration=0, duration=30, window=300),
+        dict(nodes=40, spacing=20, attack="dis", attackers="30%", period_ms=0,
+             attack_start=75, attack_duration=0, duration=30, window=300),
     ],
 }
 
@@ -62,9 +71,11 @@ CONFIG_FIELDS = ["name", "nodes", "spacing", "attack", "attackers", "seed", "mod
 METRIC_FIELDS = ["attackers_detected", "node_TP", "node_FP", "node_FN", "node_TN",
                  "node_TPR", "node_FPR", "node_precision", "node_F1",
                  "dec_TP", "dec_FP", "dec_FN", "dec_TN", "dec_TPR", "dec_FPR",
-                 "detection_latency_sec",
-                 "pdr", "pdr_normal", "delay_mean_s", "delay_p95_s",
-                 "dio_rx_per_node_min", "dis_rx_per_node_min", "parent_changes_per_node",
+                 "detection_latency_sec", "node_FPR_anyrule", "dec_FPR_anyrule",
+                 "blocks_temp_normal", "blocks_perm_normal", "normals_blocked",
+                 "pdr", "pdr_normal", "rx_duplicates", "delay_mean_s", "delay_p95_s",
+                 "overhead_source", "dio_rx_per_node_min", "dis_rx_per_node_min",
+                 "parent_changes_per_node",
                  "blocks_temp", "blocks_perm", "blocked_pairs", "temp_block_time_s",
                  "attacker_injections"]
 
@@ -82,7 +93,7 @@ def gen_cmd(t, seed, mode, out):
          "--seed", str(seed), "--duration", str(t["duration"]),
          "--window", str(t["window"]), "--mode", mode,
          "--attack", t["attack"], "--attackers", str(t["attackers"]),
-         "--no-events", "--out", out]
+         "--out", out]
     if t.get("period_ms") is not None:
         c += ["--attack-period-ms", str(t["period_ms"])]
     if t.get("attack_start") is not None:

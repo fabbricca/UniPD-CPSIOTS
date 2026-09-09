@@ -140,11 +140,17 @@ def plot_topology(csc, outdir, show_range=True):
 def plot_matrix(matrix, outdir):
     df = pd.read_csv(matrix)
     atk = df[df.attack != "baseline"]
+    # The parameter sweeps (tag "p<period>" / "dt<threshold>") all sit at
+    # 20 nodes with one attacker. Aggregating them together with the main
+    # matrix would weight that one configuration many times over, so figures
+    # that compare sizes or modes use the untagged main-matrix rows only.
+    tags = df["tag"].fillna("").astype(str) if "tag" in df.columns else None
+    main = atk[tags.loc[atk.index] == ""] if tags is not None else atk
 
     # 5. TPR and FPR by network size (node-level), per attack.
-    if len(atk):
+    if len(main):
         fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-        for attack, g in atk.groupby("attack"):
+        for attack, g in main.groupby("attack"):
             by = g.groupby("nodes")
             axes[0].errorbar(by.node_TPR.mean().index, by.node_TPR.mean() * 100,
                              yerr=by.node_TPR.std(ddof=0).fillna(0) * 100, marker="o",
@@ -155,13 +161,12 @@ def plot_matrix(matrix, outdir):
         axes[0].set_ylabel("node TPR (%)"); axes[1].set_ylabel("node FPR (%)")
         for ax in axes:
             ax.set_xlabel("number of nodes"); ax.legend()
-        fig.suptitle("detection rate by network size")
+        fig.suptitle("detection rate by network size (main matrix)")
         _save(fig, outdir / "matrix.tpr_fpr_by_size.png")
 
     # 6. Detection latency by attack rate (period_ms).
     # Use the dedicated rate sweep (tag p<period>) when present so one topology
     # and attacker count are held fixed; otherwise fall back to all attack rows.
-    tags = df["tag"].fillna("").astype(str) if "tag" in df.columns else None
     sweep = atk[tags.loc[atk.index].str.startswith("p")] if tags is not None else atk
     if len(sweep) == 0:
         sweep = atk
@@ -203,16 +208,23 @@ def plot_matrix(matrix, outdir):
         fig.suptitle("network impact: baseline vs attacks")
         _save(fig, outdir / "matrix.network_impact.png")
 
-    # 7. Mode comparison if both present: TPR/FPR/latency paper vs sliding.
-    if df["mode"].nunique() > 1 and len(atk):
+    # 7. Mode comparison: TPR/FPR/latency, paper vs sliding, over the SIX main
+    # matrix attack configurations only (tag == ""). Pooling the parameter
+    # sweeps as well would weight the 20-node single-attacker rate sweep six
+    # times over and invert the sign of the TPR difference, which is what the
+    # report's text compares.
+    if df["mode"].nunique() > 1 and len(main):
+        cfg = ["nodes", "attack", "attackers"]
         fig, axes = plt.subplots(1, 3, figsize=(13, 4))
-        for mode, g in atk.groupby("mode"):
-            axes[0].bar(mode, g.node_TPR.mean() * 100)
-            axes[1].bar(mode, g.node_FPR.mean() * 100)
-            axes[2].bar(mode, g.detection_latency_sec.dropna().mean())
+        for mode, g in main.groupby("mode"):
+            per_cfg = g.groupby(cfg)
+            axes[0].bar(mode, per_cfg.node_TPR.mean().mean() * 100)
+            axes[1].bar(mode, per_cfg.node_FPR.mean().mean() * 100)
+            axes[2].bar(mode, per_cfg.detection_latency_sec.mean().mean())
         axes[0].set_title("node TPR (%)"); axes[1].set_title("node FPR (%)")
-        axes[2].set_title("mean latency (s)")
-        fig.suptitle("paper (fixed) vs sliding detector")
+        axes[2].set_title("mean detection latency (s)")
+        fig.suptitle(f"paper (fixed) vs sliding detector - mean over the "
+                     f"{main.groupby(cfg).ngroups} main-matrix attack configurations")
         _save(fig, outdir / "matrix.mode_comparison.png")
 
 

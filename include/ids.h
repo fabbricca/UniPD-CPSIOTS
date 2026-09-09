@@ -32,6 +32,13 @@ int ids_rpl_input(uint8_t code, const uip_ipaddr_t *from);
 /* Bound to RPL_CALLBACK_PARENT_SWITCH in project-conf.h. */
 void ids_parent_switch(rpl_nbr_t *old, rpl_nbr_t *new);
 
+/* Paper-faithful neighbour attack (ATTACK_REBROADCAST): the hook queues one
+ * rebroadcast per received DIO; the attacker process drains the queue outside
+ * the RPL receive path. Enable/disable gates the attack interval. */
+void ids_rebroadcast_enable(int on);
+uint8_t ids_take_rebroadcast(void);   /* pending count, cleared on read */
+uint16_t ids_rebroadcast_dropped(void);
+
 /* Helpers shared with the node firmware. */
 uint16_t ids_node_id(const uip_ipaddr_t *addr);   /* 0 when addr is NULL */
 uint16_t ids_parent_changes(void);

@@ -45,6 +45,11 @@
 #ifndef IDS_TEMP_BLOCK_SEC
 #define IDS_TEMP_BLOCK_SEC             60     /* paper: 1 minute */
 #endif
+/* Neighbour attack model: 1 = paper's rebroadcast-on-receipt, 0 = fixed-rate
+ * flood (used only for the attack-rate sweep). */
+#ifndef ATTACK_REBROADCAST
+#define ATTACK_REBROADCAST             1
+#endif
 /* Windows in which detection is suppressed (0 = paper behaviour). Kept as an
  * explicit experimental parameter for the warm-up discussion. */
 #ifndef IDS_WARMUP_WINDOWS

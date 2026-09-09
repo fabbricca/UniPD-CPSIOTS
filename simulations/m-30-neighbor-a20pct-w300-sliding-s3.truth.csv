@@ -1,7 +1,7 @@
 attacker_id,attack_type,period_ms,start_sec,duration_sec
-6,neighbor,10000,75,600
-9,neighbor,10000,75,600
-13,neighbor,10000,75,600
-19,neighbor,10000,75,600
-20,neighbor,10000,75,600
-21,neighbor,10000,75,600
+6,neighbor,0,75,0
+9,neighbor,0,75,0
+13,neighbor,0,75,0
+19,neighbor,0,75,0
+20,neighbor,0,75,0
+21,neighbor,0,75,0

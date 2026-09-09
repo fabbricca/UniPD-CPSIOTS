@@ -25,6 +25,52 @@ static uint16_t window;              /* evaluations completed so far */
 static uint16_t parent_changes;
 static struct ctimer eval_timer;
 static uint8_t initialised;
+#if ATTACK_REBROADCAST
+/* Queue of DIOs to rebroadcast, capped so a mutual echo between attackers
+ * cannot saturate the medium; drops are counted and logged. */
+#ifndef ATTACK_REBCAST_QUEUE
+#define ATTACK_REBCAST_QUEUE 16
+#endif
+/* Minimum seconds between two rebroadcasts of DIOs from the same source.
+ * Without it, attackers rebroadcast each other's rebroadcasts and the echo
+ * grows without bound; the paper's ContikiMAC duty cycling throttles this
+ * implicitly, while CSMA with the radio always on does not. */
+#ifndef ATTACK_REBCAST_MIN_INTERVAL
+#define ATTACK_REBCAST_MIN_INTERVAL 10
+#endif
+#ifndef ATTACK_REBCAST_SOURCES
+#define ATTACK_REBCAST_SOURCES 24
+#endif
+static uint8_t rebcast_pending;
+static uint8_t rebcast_on;
+static uint16_t rebcast_dropped;
+static uint16_t rebcast_src_id[ATTACK_REBCAST_SOURCES];
+static unsigned long rebcast_src_last[ATTACK_REBCAST_SOURCES];
+static uint8_t rebcast_src_count;
+
+/* True at most once per ATTACK_REBCAST_MIN_INTERVAL per source. */
+static int
+rebcast_due(uint16_t id)
+{
+  uint8_t i;
+  unsigned long now = clock_seconds();
+  for(i = 0; i < rebcast_src_count; i++) {
+    if(rebcast_src_id[i] == id) {
+      if(now - rebcast_src_last[i] < ATTACK_REBCAST_MIN_INTERVAL) {
+        return 0;
+      }
+      rebcast_src_last[i] = now;
+      return 1;
+    }
+  }
+  if(rebcast_src_count < ATTACK_REBCAST_SOURCES) {
+    rebcast_src_id[rebcast_src_count] = id;
+    rebcast_src_last[rebcast_src_count] = now;
+    rebcast_src_count++;
+  }
+  return 1;
+}
+#endif
 #if IDS_MODE_SLIDING
 static uint8_t head;                 /* current bucket index */
 static uint8_t filled;               /* buckets accumulated so far (<= N) */
@@ -143,12 +189,50 @@ block(ids_nbr_t *n)
   }
 }
 /*---------------------------------------------------------------------------*/
+#if ATTACK_REBROADCAST
+void
+ids_rebroadcast_enable(int on)
+{
+  rebcast_on = on ? 1 : 0;
+  if(!on) {
+    rebcast_pending = 0;
+  } else {
+    rebcast_src_count = 0;
+  }
+}
+/*---------------------------------------------------------------------------*/
+uint8_t
+ids_take_rebroadcast(void)
+{
+  uint8_t v = rebcast_pending;
+  rebcast_pending = 0;
+  return v;
+}
+/*---------------------------------------------------------------------------*/
+uint16_t
+ids_rebroadcast_dropped(void)
+{
+  return rebcast_dropped;
+}
+/*---------------------------------------------------------------------------*/
+#endif /* ATTACK_REBROADCAST */
 int
 ids_rpl_input(uint8_t code, const uip_ipaddr_t *from)
 {
   uint16_t id = ids_node_id(from);
   ids_nbr_t *n;
 
+#if ATTACK_REBROADCAST
+  /* Paper's neighbour attack: rebroadcast every DIO received from a neighbour.
+   * Queued here and emitted by the attacker process, never from this path. */
+  if(rebcast_on && code == RPL_CODE_DIO && rebcast_due(id)) {
+    if(rebcast_pending < ATTACK_REBCAST_QUEUE) {
+      rebcast_pending++;
+    } else {
+      rebcast_dropped++;
+    }
+  }
+#endif
   if(!initialised) {
     return 1;                       /* root or attacker: pass through */
   }

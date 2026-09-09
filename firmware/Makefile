@@ -41,6 +41,14 @@ endif
 ifdef IDS_WARMUP_WINDOWS
   CFLAGS += -DIDS_WARMUP_WINDOWS=$(IDS_WARMUP_WINDOWS)
 endif
+# Per-message EV logging. Without this clause the IDS_LOG_EVENTS=0 that
+# gen_scenario.py puts on the make command line was silently ignored, because a
+# make variable is not a preprocessor define; project-conf.h's default of 1
+# always won. The analysis now counts control-plane overhead from EV records,
+# so leave it enabled for scenarios whose traffic figures are reported.
+ifdef IDS_LOG_EVENTS
+  CFLAGS += -DIDS_LOG_EVENTS=$(IDS_LOG_EVENTS)
+endif
 ifdef ATTACK_START_SEC
   CFLAGS += -DATTACK_START_SEC=$(ATTACK_START_SEC)
 endif
@@ -49,6 +57,9 @@ ifdef ATTACK_DURATION_SEC
 endif
 ifdef ATTACK_PERIOD_MS
   CFLAGS += -DATTACK_PERIOD_MS=$(ATTACK_PERIOD_MS)
+endif
+ifdef ATTACK_REBROADCAST
+  CFLAGS += -DATTACK_REBROADCAST=$(ATTACK_REBROADCAST)
 endif
 
 # Sky-fit build (ROM/RAM overhead measurement): shrink tables and silence the
@@ -71,7 +82,7 @@ include $(CONTIKI)/Makefile.include
 # firmware/build/ across scenarios. Objects that depend on the tunables above
 # are made to depend on a stamp file that is rewritten only when the variant
 # string changes, so switching window/mode/interval recompiles exactly them.
-VARIANT_ID := mode-$(IDS_MODE)_win-$(IDS_WINDOW_SEC)_send-$(APP_SEND_INTERVAL_SEC)_dis-$(IDS_DIS_THRESHOLD)_warm-$(IDS_WARMUP_WINDOWS)_atk-$(ATTACK_START_SEC)-$(ATTACK_DURATION_SEC)-$(ATTACK_PERIOD_MS)
+VARIANT_ID := mode-$(IDS_MODE)_win-$(IDS_WINDOW_SEC)_send-$(APP_SEND_INTERVAL_SEC)_dis-$(IDS_DIS_THRESHOLD)_warm-$(IDS_WARMUP_WINDOWS)_ev-$(IDS_LOG_EVENTS)_atk-$(ATTACK_START_SEC)-$(ATTACK_DURATION_SEC)-$(ATTACK_PERIOD_MS)-rb$(ATTACK_REBROADCAST)
 VARIANT_STAMP := $(OBJECTDIR)/variant.stamp
 $(VARIANT_STAMP): FORCE
 	@mkdir -p $(dir $@)
