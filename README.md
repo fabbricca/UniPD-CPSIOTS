@@ -212,25 +212,29 @@ normal nodes so one flag is >10%); the decision-level FPR is ~1% and the paper
 preset (20/30/40 nodes, 300 s windows, 5 seeds) is where these average down.
 The pipeline itself is validated here; the final numbers come from section 6.
 
-## Final results (section 6)
+## Final results
 
-Main matrix: 20/30/40 nodes x 1/20%/30% attackers x paper+sliding x 5 seeds,
-plus DIS-threshold (2/3/5) and attack-rate (1/5/10/30 s, random 5-60 s) sweeps
-at 3 seeds. 148 runs, all reproducible (`results/repeatability.txt`: same seed
-gives byte-identical logs). Full write-up in `report/report.md`; per-run rows in
-`results/matrix.csv`, per-configuration summary in `results/summary.csv`.
+Scored matrix: 168 simulations, all reproducible (same seed gives byte-identical
+logs, `results/repeatability.txt`). That is 90 in the main matrix (20/30/40
+nodes with 1/20%/30% attackers, both attacks, both detector modes, 5 seeds),
+18 in the DIS-threshold sweep and 60 in the attack-rate sweep, at 3 seeds each.
+Both attacks follow the paper's definitions: the neighbour attacker
+rebroadcasts the DIOs it receives, the DIS attacker uses a random 5-60 s
+interval. **The full write-up is `RPL_IDS_Analysis.pdf`**; per-run rows are in
+`results/matrix.csv` and the per-configuration summary in `results/summary.csv`.
 
 | headline | value |
 |---|---|
-| DIS attack, every size/fraction, both modes | TPR 100 %, FPR 0 % (paper reproduced) |
-| neighbour attack, 1 attacker | TPR 100 %, FPR 7 % (paper mode) |
-| neighbour attack, 20 % / 30 % attackers | TPR 33 % / 5 % (masking, finding 2) |
-| sliding vs paper (mean over attacks) | latency 225 s -> 28 s, FPR 1.5 % -> 11 %, TPR 73 % -> 77 % |
-| sliding, slow DIS (>= 30 s period) | missed: fixed threshold 3 does not fit a 60 s window (finding 3) |
-| sliding, baseline | ~100 permanent blocks per run: response parameters need re-tuning |
-| DIS attack control-plane cost | DIO receptions x6 (1 attacker) to x13 (30 %); sliding halves it |
-| PDR / delay under attack | unchanged (1.0 / ~40-60 ms): lossless UDGM, light traffic |
-| IDS module on Tmote Sky | ~2 KB ROM, ~0.6 KB RAM (`results/overhead.txt`) |
+| DIS attack, paper mode, every size/fraction | TPR 100 %, FPR 0 % (paper reproduced exactly) |
+| neighbour attack, 1 attacker, paper mode | TPR 100 %; FPR 0.31 % per decision vs the paper's 0.30 % |
+| neighbour attack, 20 % / 30 % attackers | TPR 53.3 % / 33.3 % vs the paper's 99.3 % / 98.5 % (masking, finding 2) |
+| sliding vs paper (mean over attacks) | latency 225 s -> 122 s, FPR 3.0 % -> 23.4 %, TPR essentially flat (81.1 -> 80.3) |
+| sliding, neighbour attack | wins: latency under 10 s, TPR 53->73 % and 33->50 % (resists masking) |
+| sliding, DIS attack | loses: TPR 100 % -> 80-92 %, and provoked traffic rises (finding 3) |
+| sliding, baseline | 96/139/188 permanent blocks per run with no attacker: parameters need re-deriving |
+| DIS attack control-plane cost | DIO receptions x4.9 (1 attacker) to x12.9 (30 %) |
+| PDR / delay under attack | unchanged (1.000 / 38-63 ms): lossless UDGM, light traffic |
+| IDS module on Tmote Sky | ~2 kB ROM, ~0.6 kB RAM (`results/overhead.txt`) |
 
 Reproduce: `./run.sh matrix --preset paper --seeds 1 2 3 4 5 --modes paper sliding`,
 then `--preset dis-threshold --append`, `--preset rates --modes paper sliding --append`,

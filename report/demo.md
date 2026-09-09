@@ -58,7 +58,7 @@ resists multi-attacker masking.
 
 ## F. Fallback if Cooja cannot run
 
-* `report/report.md` (full write-up), `results/summary.csv` (Table 1).
+* `RPL_IDS_Analysis.pdf` (full write-up), `results/summary.csv` (Table 1).
 * `report/figures/*.png`: topology, threshold vs count, alert timeline, TPR/FPR
   by size, latency by rate, network impact, mode comparison.
 * `report/evidence/*.log`: the kept run logs; `./run.sh parse` and
