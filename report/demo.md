@@ -3,7 +3,7 @@
 Everything runs from the pinned Docker image; nothing is installed on the host.
 If Docker or the network is unavailable, use the fallback material in section F.
 
-## A. Setup (before the session)
+## A. Setup (beforehand)
 
 ```bash
 cd rpl-ids
