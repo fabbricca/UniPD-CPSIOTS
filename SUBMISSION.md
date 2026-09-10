@@ -59,7 +59,13 @@ above, and together they exceed 700 MB. The kept logs the tests rely on are in
 
 ## Verification
 
-`./run.sh test` runs the unit suite. `python scripts/replay_check.py` (inside
-`./run.sh shell`) replays every stored log and re-derives each detector decision
-from the logged counts, requiring an exact match. Cooja is deterministic per
-seed, so any run regenerates byte-identically.
+`./run.sh test` runs the unit suite (28 tests). Inside `./run.sh shell`,
+`python scripts/replay_check.py` re-derives every detector decision from the
+logged per-neighbour counts and requires an exact match against the firmware.
+
+This archive ships no run logs, since they are large and fully regenerable, so
+the check falls back to the evidence logs in `report/evidence/`. To reproduce
+the figure quoted in the report (308,206 decisions over 197 logs), run the
+three matrix commands above first and then the replay check. Cooja is
+deterministic for a given seed and firmware, so every run regenerates
+byte-identically.

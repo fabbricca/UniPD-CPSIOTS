@@ -73,10 +73,20 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("logs", nargs="*", default=None,
-                    help="log files (default: every logs/*.log)")
+                    help="log files (default: logs/*.log, or report/evidence/*.log "
+                         "when logs/ is empty)")
     ap.add_argument("--out", default=str(ROOT / "results" / "replay_check.txt"))
     a = ap.parse_args()
     logs = [pathlib.Path(x) for x in a.logs] or sorted((ROOT / "logs").glob("*.log"))
+    if not logs:
+        # A fresh checkout ships no run logs: they are large and regenerable.
+        # Fall back to the evidence logs kept for the test suite, so the check
+        # still demonstrates the firmware/model agreement out of the box.
+        logs = sorted((ROOT / "report" / "evidence").glob("*.log"))
+        if logs:
+            print(f"logs/ is empty; replaying the {len(logs)} evidence logs in "
+                  f"report/evidence/ instead.\nRun the matrix (see SUBMISSION.md) "
+                  f"to regenerate the full set.\n")
     total, files, skipped, bad = 0, 0, 0, []
     for log in logs:
         c, b, no_det = replay(log)
