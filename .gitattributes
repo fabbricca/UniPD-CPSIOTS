@@ -1,0 +1,4 @@
+# Keep the write-ups from being counted as the project's primary language.
+**/report/**      linguist-documentation
+*.tex             linguist-documentation
+*.pdf             linguist-documentation
