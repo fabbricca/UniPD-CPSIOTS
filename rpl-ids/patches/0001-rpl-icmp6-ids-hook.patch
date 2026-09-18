@@ -1,0 +1,56 @@
+From: rpl-ids project
+Subject: [PATCH] rpl-lite: add IDS input hook for DIS/DIO reception
+
+Adds a compile-time guarded call to ids_rpl_input() at the top of
+dis_input() and right after the sender address is known in dio_input().
+The hook lets a project count RPL control messages per neighbour and,
+by returning 0, drop messages from neighbours it has blocked, without
+touching RPL's neighbour table. Enabled by defining RPL_IDS_HOOKS=1 in
+project-conf.h; with the macro undefined the file is unchanged.
+
+Target: Contiki-NG release/v5.2 (4ccd1a3b).
+---
+diff --git a/os/net/routing/rpl-lite/rpl-icmp6.c b/os/net/routing/rpl-lite/rpl-icmp6.c
+index cd1ad65..cd89368 100644
+--- a/os/net/routing/rpl-lite/rpl-icmp6.c
++++ b/os/net/routing/rpl-lite/rpl-icmp6.c
+@@ -57,6 +57,12 @@
+ #define LOG_MODULE "RPL"
+ #define LOG_LEVEL LOG_LEVEL_RPL
+ 
++#if RPL_IDS_HOOKS
++/* Project hook (rpl-ids): called for every received DIS/DIO before RPL
++ * processes it. Return 0 to drop the message, non-zero to accept. */
++int ids_rpl_input(uint8_t code, const uip_ipaddr_t *from);
++#endif /* RPL_IDS_HOOKS */
++
+ /*---------------------------------------------------------------------------*/
+ #define RPL_DIO_GROUNDED                 0x80
+ #define RPL_DIO_MOP_SHIFT                3
+@@ -132,6 +138,12 @@ rpl_icmp6_update_nbr_table(uip_ipaddr_t *from, nbr_table_reason_t reason, void *
+ static void
+ dis_input(void)
+ {
++#if RPL_IDS_HOOKS
++  if(!ids_rpl_input(RPL_CODE_DIS, &UIP_IP_BUF->srcipaddr)) {
++    LOG_INFO("dis_input: dropped by IDS\n");
++    goto discard;
++  }
++#endif /* RPL_IDS_HOOKS */
+   if(!curr_instance.used) {
+     LOG_WARN("dis_input: not in an instance yet, discard\n");
+     goto discard;
+@@ -194,6 +206,13 @@ dio_input(void)
+ 
+   uip_ipaddr_copy(&from, &UIP_IP_BUF->srcipaddr);
+ 
++#if RPL_IDS_HOOKS
++  if(!ids_rpl_input(RPL_CODE_DIO, &from)) {
++    LOG_INFO("dio_input: dropped by IDS\n");
++    goto discard;
++  }
++#endif /* RPL_IDS_HOOKS */
++
+   buffer_length = uip_len - uip_l3_icmp_hdr_len;
+ 
+   if(buffer_length < 8 + sizeof(dio.dag_id)) {

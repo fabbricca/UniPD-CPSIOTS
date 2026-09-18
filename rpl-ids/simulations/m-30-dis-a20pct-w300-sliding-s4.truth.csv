@@ -1,0 +1,7 @@
+attacker_id,attack_type,period_ms,start_sec,duration_sec
+5,dis,0,75,0
+9,dis,0,75,0
+11,dis,0,75,0
+14,dis,0,75,0
+17,dis,0,75,0
+25,dis,0,75,0

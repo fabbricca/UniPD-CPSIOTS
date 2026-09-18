@@ -1,0 +1,13 @@
+attacker_id,attack_type,period_ms,start_sec,duration_sec
+3,neighbor,0,75,0
+5,neighbor,0,75,0
+12,neighbor,0,75,0
+13,neighbor,0,75,0
+17,neighbor,0,75,0
+18,neighbor,0,75,0
+24,neighbor,0,75,0
+29,neighbor,0,75,0
+31,neighbor,0,75,0
+34,neighbor,0,75,0
+35,neighbor,0,75,0
+38,neighbor,0,75,0

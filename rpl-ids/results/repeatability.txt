@@ -1,0 +1,13 @@
+Repeatability check (PROJECT_PLAN section 11, item 9) - 2026-09-05
+=================================================================
+Scenario: simulations/m-20-neighbor-a1-w300-paper-s1.csc (20 nodes, 1 neighbour
+attacker, paper mode, seed 1, 30 simulated minutes), run twice from the same
+image.
+
+  cmp logs/m-20-neighbor-a1-w300-paper-s1.log logs/repeat/...   -> byte-identical
+  calculate_metrics.py on both logs                             -> identical
+
+Cooja is deterministic for a given random seed and firmware, so every result
+in results/matrix.csv can be regenerated exactly with run_matrix.py --force.
+Variation reported across seeds is therefore due to seed (topology placement
+of attackers, timer jitter), not to run-to-run noise.

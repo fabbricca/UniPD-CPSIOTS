@@ -1,0 +1,37 @@
+IDS resource overhead (Tmote Sky, msp430-gcc 4.7.4, Contiki-NG v5.2)
+====================================================================
+All figures from `msp430-size`; reproduce with
+  make -C firmware TARGET=sky [IDS_MODE=SLIDING] [SKY_FIT=1] rpl-ids-node
+
+Detector module alone (firmware/build/sky/obj/ids.o, IDS_MAX_NEIGHBORS=40)
+  paper mode     text(ROM) 1988 B   bss(RAM)  588 B   data 0 B
+  sliding mode   text(ROM) 2204 B   bss(RAM) 1070 B   data 0 B
+  delta          ROM +216 B, RAM +482 B  (2 x IDS_SLIDE_BUCKETS bytes per
+                 neighbour of ring buffer: 2 x 6 x 40 = 480 B, plus head/filled)
+  The 82 B k-table (41 x uint16_t) is inside the ROM figure.
+
+Stock reference: examples/rpl-udp udp-client, TARGET=sky, Contiki defaults
+  text(ROM) 44578 / 49152 B (90.7%)   bss(RAM) 7036 / 10240 B (68.7%)
+  -> only 4574 B of ROM headroom before the detector is added at all.
+
+Whole node firmware, TARGET=sky, linker result
+  1. as used in the experiments (default tables, full CSV instrumentation)
+       ROM overflows by 11024 B, RAM overflows by 1104 B
+  2. SKY_FIT=1 (tables 12/8/8, IDS_LOG_EVENTS=0, MAIN log off)
+       ROM overflows by 10128 B
+  3. SKY_FIT=1 and every ids.c / rpl-ids-node.c printf removed
+       ROM overflows by 9260 B      <-- removing our own logging saves only 868 B
+  4. as (3) and project-conf.h's raised Contiki log levels (RPL/IPv6/6LoWPAN
+     WARN, MAC ERR, MAIN INFO) returned to LOG_LEVEL_NONE
+       LINKS: text 44482 / 49152 B (90.5%)   bss 7202 / 10240 B (70.3%)
+
+Finding: under Contiki-NG v5.2 a stock RPL-lite + UDP node already uses 91% of
+the Sky's ROM. The detector module itself (~2 KB) fits that headroom, and a
+deployment-shaped build (4) does link with 4670 B to spare. What does not fit
+is the *instrumented* node used for the experiments -- and the dominant cost is
+not the project's own CSV printf records (868 B) but the raised Contiki-NG log
+levels this project sets in project-conf.h to make runs debuggable, which
+compile format strings and logging paths into the whole IPv6/RPL stack. The
+experiments therefore run on the cooja/native mote, which has no memory limit.
+The paper used the same Tmote Sky but on Contiki 2.7, whose smaller RPL
+implementation left far more free ROM.
