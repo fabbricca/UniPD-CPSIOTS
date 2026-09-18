@@ -2,3 +2,6 @@
 **/report/**      linguist-documentation
 *.tex             linguist-documentation
 *.pdf             linguist-documentation
+# Cooja scenario files are XML data, not code (linguist otherwise reads .csc as "GSC").
+*.csc             linguist-language=XML linguist-generated
+*.csv             linguist-generated
