@@ -45,6 +45,7 @@ reports in Fig. 13(b).
 | `logs/` | CSV logs of the reported runs |
 | `report/` | LaTeX source and PDF of the write-up |
 
-**Caveat, stated in the report:** modern ArduPilot EKF3 rejects the spoof by default;
-the reproduction depends on the explicit parameter overrides in `missions/`, which the
-2019 firmware on the paper's 3DR Solo did not need.
+**Caveat, stated in the report:** the EKF can be induced to track the spoofed feed
+while the true vehicle drifts, but on current ArduPilot this needs the explicit EKF /
+fail-safe parameter overrides in `missions/` to get past safeguards stricter than those
+the paper faced.
